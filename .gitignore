@@ -1,0 +1,19 @@
+## Ignorar qualquer arquivo ou pasta com os nomes:
+## Motivo: Arquivos pessoais, temporários ou cache.
+.ipynb_checkpoints
+.vscode
+*.code-workspace
+__pycache__/
+*.pyc
+
+## Ignorar a pasta Datasets exceto Readme.md
+## Motivo: É suficiente deixar apenas o link para download do dataset.
+Datasets/**
+!Datasets/Readme.md
+
+
+# Pasta com testes locais feitos temporariamente ou para testes
+temp/*
+
+# Pesos dos modelos treinados
+*.pt
