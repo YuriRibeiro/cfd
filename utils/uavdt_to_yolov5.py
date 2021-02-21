@@ -4,7 +4,7 @@
 Script Python para organizar o UAVDT Dataset na forma requerida pelo módulo YOLOv5.
 """
 from glob import glob
-from os import system
+from os import system, getcwd
 
 def letterbox(img, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True):
     """
@@ -60,6 +60,9 @@ def UAVDT_To_YoloV5_Dataset_Format(conjunto="Treino", movies_to_transform=[],
     num_of_analised_files = 0
     num_of_transformed_files = 0
     num_of_images_without_labels = 0
+    num_of_skipped_images = 0
+    num_of_labels = 0
+    num_total_of_labels = 0
 
     # Dimensões originais das imagens
     original_width = 1024
@@ -71,6 +74,14 @@ def UAVDT_To_YoloV5_Dataset_Format(conjunto="Treino", movies_to_transform=[],
 
     test_images_folder = f"{dest}/test/images"
     test_labels_folder = f"{dest}/test/labels"
+
+    print(f"""
+    CWD: {getcwd()}
+    Train images folder: {train_images_folder}
+    Train labels folder: {train_labels_folder}
+    Test images folder: {test_images_folder}
+    Test labels folder: {test_labels_folder}
+    """)
 
     if conjunto == "Treino":
         # Limpar a pasta de destino:
@@ -109,13 +120,21 @@ def UAVDT_To_YoloV5_Dataset_Format(conjunto="Treino", movies_to_transform=[],
         #  <frame_index>,<target_id>,<bbox_left>,<bbox_top>,
         #  <bbox_width>,<bbox_height>,<out-of-view>,<occlusion>,<object_category>
         #  class: 1 = Car; 2 = Truck; 3 = Bus.
+        num_of_labels = 0
+        num_of_images = len(jpg_files) 
+        labels = [""]*(num_of_images+1)
 
-        labels = [""]*(len(jpg_files)+1)
+        print(f"[INFO] Analisando imagens e labels do clipe: {movie} ({num_of_images} frames). ", end="")
 
         with open(f"{uavdt_path}/UAV-benchmark-MOTD_v1.0/GT/{movie}_gt_whole.txt") as f:
             for line in f.readlines():
                 line = line.split(",")
                 frame = int(line[0])
+                if frame > num_of_images:
+                    # Skip image, if we are working with a small version of the dataset(debug purposes)
+                    num_of_skipped_images += 1
+                    continue
+                num_of_labels += 1
                 
                 classe = int(line[-1]) - 1 # Zero indexed in yolov5 format.
                 if coco_labels == True:
@@ -139,6 +158,9 @@ def UAVDT_To_YoloV5_Dataset_Format(conjunto="Treino", movies_to_transform=[],
                 yv5_line = f"{classe} {xc} {yc} {bbox_width} {bbox_height}\n"
                 
                 labels[frame] = labels[frame] + yv5_line
+        
+        print(f"Quantidade de Labels: {num_of_labels}.")
+        num_total_of_labels += num_of_labels
 
         for jpg_file in jpg_files:
             # Informações da imagem:
@@ -202,13 +224,14 @@ def UAVDT_To_YoloV5_Dataset_Format(conjunto="Treino", movies_to_transform=[],
             num_of_transformed_files += 1
 
         num_of_analised_files += len(jpg_files)
-
-        print(f"[INFO] Analisando imagens do clipe: {movie}...")
     
     final_msg = f"[INFO] Processo finalizado para o conjunto de {conjunto}.\n" + \
-                f" Total de Imagens Analisadas: {num_of_analised_files}." + \
-                f" Total de Imagens Transformadas: {num_of_transformed_files}." + \
-                f" Total de Imagens Sem Labels: {num_of_images_without_labels}."
+                f" Total de Imagens Analisadas: {num_of_analised_files}.\n" + \
+                f" Total de Imagens Transformadas: {num_of_transformed_files}.\n" + \
+                f" Total de Imagens Sem Labels: {num_of_images_without_labels}.\n" +\
+                f" Total de Imagens Puladas: {num_of_skipped_images}.\n" +\
+                f" Total de Labels: {num_total_of_labels}.\n"
+                
     print(final_msg)
 
 

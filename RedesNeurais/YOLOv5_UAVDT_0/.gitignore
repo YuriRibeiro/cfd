@@ -1,8 +1,0 @@
-#Ignorar aquivos jpg dos datasets
-yolov5
-UAVDT_YOLOv5
-runs/*
-data.yaml
-*.pt
-logs/*
-resultados/*

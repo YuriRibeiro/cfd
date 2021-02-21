@@ -9,14 +9,14 @@ Nesta seção são descritos as informações mais relevantes do experimento, co
 
 | Experimento    | Épocas | Pré-Treino       | Modelo   | Batch Size |
 |----------------|--------|------------------|----------|------------|
-| YOLOv5_UAVDT_0 | 30     | COCO (300 Épocas)| YOLOv5 S | 16         |
-| YOLOv5_UAVDT_1 | 30     | NÃO              | YOLOv5 S | 16         |
-| YOLOv5_UAVDT_3 | 30     | COCO (300 Épocas)| YOLOv5 M | 16         |
-| YOLOv5_UAVDT_4 | 30     | NÃO              | YOLOv5 M | 16         |
-| YOLOv5_UAVDT_5 | 30     | COCO (300 Épocas)| YOLOv5 L | 16         |
-| YOLOv5_UAVDT_6 | 30     | NÃO              | YOLOv5 L | 16         |
-| YOLOv5_UAVDT_7 | 30     | COCO (300 Épocas)| YOLOv5 X | 16         |
-| YOLOv5_UAVDT_8 | 30     | NÃO              | YOLOv5 X | 16         |
+| YOLOv5_UAVDT_0 | 50     | COCO (300 Épocas)| YOLOv5 S | 16         |
+| YOLOv5_UAVDT_1 | 50     | COCO (300 Épocas)| YOLOv5 M | 16         |
+| YOLOv5_UAVDT_3 | 50     | COCO (300 Épocas)| YOLOv5 L | 16         |
+| YOLOv5_UAVDT_4 | 50     | COCO (300 Épocas)| YOLOv5 X | 16         |
+| YOLOv5_UAVDT_5 | 50     | NÃO              | YOLOv5 S | 16         |
+| YOLOv5_UAVDT_6 | 50     | NÃO              | YOLOv5 M | 16         |
+| YOLOv5_UAVDT_7 | 50     | NÃO              | YOLOv5 L | 16         |
+| YOLOv5_UAVDT_8 | 50     | NÃO              | YOLOv5 X | 16         |
 <br>
 
 ## Comentários
@@ -24,13 +24,12 @@ Nesta seção, são expostas as principais características exploradas em cada e
 
 - YOLOv5_UAVDT_X  (X = 1,2,...,8)
   - Vídeos do Dataset:
-    - Todos
+    - Conténdo todas as situações (dia, noite, etc.)
   - Pré-processamento das imagens
     - Zonas de ignore borradas fortemente com filtro gaussiano.
   - Características da rede:
     - Resolução de entrada: 640
-    - IOU Threshold: 0.5
-    - Confidence Threshold: 0.5
+    - Otimizador: adam
 
 <br>
 
@@ -63,5 +62,3 @@ Nesta seção, são expostas as principais características exploradas em cada e
 | YOLOv5_UAVDT_6 |        |        |         |         |         |         |         |         |
 | YOLOv5_UAVDT_7 |        |        |         |         |         |         |         |         |
 | YOLOv5_UAVDT_8 |        |        |         |         |         |         |         |         |
-
-

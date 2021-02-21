@@ -1,19 +1,26 @@
-## Ignorar qualquer arquivo ou pasta com os nomes:
-## Motivo: Arquivos pessoais, temporários ou cache.
-.ipynb_checkpoints
-.vscode
-*.code-workspace
-__pycache__/
-*.pyc
+# https://git-scm.com/docs/gitignore
+# https://www.atlassian.com/git/tutorials/saving-changes/gitignore
+
+
+## Arquivos pessoais, temporários ou cache.
+**/.ipynb_checkpoints/
+**/.vscode/
+**/*.code-workspace
+**/__pycache__/
+**/*.pyc
 
 ## Ignorar a pasta Datasets exceto Readme.md
-## Motivo: É suficiente deixar apenas o link para download do dataset.
-Datasets/**
-!Datasets/Readme.md
+/Datasets/*
+!/Datasets/README.md
 
-
-# Pasta com testes locais feitos temporariamente ou para testes
-temp/*
+# Pasta temporária local
+/temp/
 
 # Pesos dos modelos treinados
-*.pt
+**/*.pt
+
+# Arquivos criados durante os experimentos (são salvos apenas na nuvem)
+# Preservar apenas os notebooks
+**/RedesNeurais/*/*
+!**/RedesNeurais/*/*.ipynb
+!**/RedesNeurais/*/*.sh

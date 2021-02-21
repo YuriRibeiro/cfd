@@ -1,5 +1,6 @@
 # Introdução
 Repositório com códigos desenvolvidos para a dissertação.
+Para clonar este repositório: `git clone --recurse-submodules https://github.com/YuriRibeiro/cfd.git` 
 
 
 # Pastas deste Repositório
