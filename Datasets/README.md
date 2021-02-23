@@ -18,3 +18,8 @@ Nome dos arquivos para download:
 ```bash 
 fname="UAV-benchmark-M.zip" && ds_folder="UAVDT" && fpath="./${ds_folder}/${fname}" && mkdir $ds_folder ; curl -L "https://storage.googleapis.com/cfdy/Datasets/UAVDT/${fname}" -o $fpath && unzip -q $fpath -d "./${ds_folder}" && rm -f $fpath && echo "FIM do download de ${fname}"
 ```
+
+Para criar uma cópia simbólica do UAVDT no formato requerido pelo YOLOv5 para detecções.
+```bash
+python ../utils/uavdt_to_yolov5.py --conjunto treinoEteste --dest-folder ./UAVDT_YOLOv5
+```

@@ -3,6 +3,9 @@
 Nesta pasta são guardados os experimentos que serão apresentados na dissertação.
 Cada nome do experimento é formado pelo nome da rede, pelo dataset em que foi treinada, e pelo número único do experimento, ou seja, `Rede_DATASET_X`.
 
+## Download dos Resultados
+
+Para sincronizar todos os resultados disponíveis na nuvem: `cd` para esta pasta e `gsutil -m rsync -r gs://cfdy/Experimentos/ ./`.Para resultados específicos `exp="YOLOv5_UAVDT_0"; gsutil -m rsync -r gs://cfdy/Experimentos/$exp ./$exp`.
 
 # Resumo dos Experimentos
 Nesta seção são descritos as informações mais relevantes do experimento, com o intuito de criar um registro de fácil consulta.
@@ -11,8 +14,8 @@ Nesta seção são descritos as informações mais relevantes do experimento, co
 |----------------|--------|------------------|----------|------------|
 | YOLOv5_UAVDT_0 | 50     | COCO (300 Épocas)| YOLOv5 S | 16         |
 | YOLOv5_UAVDT_1 | 50     | COCO (300 Épocas)| YOLOv5 M | 16         |
-| YOLOv5_UAVDT_3 | 50     | COCO (300 Épocas)| YOLOv5 L | 16         |
-| YOLOv5_UAVDT_4 | 50     | COCO (300 Épocas)| YOLOv5 X | 16         |
+| YOLOv5_UAVDT_3 | 50     | COCO (300 Épocas)| YOLOv5 L | 8          |
+| YOLOv5_UAVDT_4 | 50     | COCO (300 Épocas)| YOLOv5 X | 8          |
 | YOLOv5_UAVDT_5 | 50     | NÃO              | YOLOv5 S | 16         |
 | YOLOv5_UAVDT_6 | 50     | NÃO              | YOLOv5 M | 16         |
 | YOLOv5_UAVDT_7 | 50     | NÃO              | YOLOv5 L | 16         |
