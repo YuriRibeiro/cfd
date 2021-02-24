@@ -25,7 +25,9 @@ class YOLOv5_UAVDT_CONFIG:
     
     # Relatitve Weights Paths "Database"
     weight_paths = {"YOLOv5_UAVDT_0" : yv5_weigth_path("YOLOv5_UAVDT_0", "21_Feb_2021_18h_17m"),
-                    "YOLOv5_UAVDT_1" : yv5_weigth_path("YOLOv5_UAVDT_1", "21_Feb_2021_19h_26m")}
+                    "YOLOv5_UAVDT_1" : yv5_weigth_path("YOLOv5_UAVDT_1", "21_Feb_2021_19h_26m"),
+                    "YOLOv5_UAVDT_2" : yv5_weigth_path("YOLOv5_UAVDT_2", "21_Feb_2021_21h_42m"),
+                    "YOLOv5_UAVDT_3" : yv5_weigth_path("YOLOv5_UAVDT_3", "22_Feb_2021_11h_36m")}
     
     movies_teste = ["M0203", "M0205", "M0208", "M0209", "M0403", "M0601", \
                     "M0602", "M0606", "M0701", "M0801", "M0802", "M1001", "M1004", \
