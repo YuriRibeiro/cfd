@@ -24,3 +24,4 @@
 **/RedesNeurais/*/*
 !**/RedesNeurais/*/*.ipynb
 !**/RedesNeurais/*/*.sh
+!**/RedesNeurais/*/hyp.*.yaml
