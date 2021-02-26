@@ -10,16 +10,18 @@ Para sincronizar todos os resultados disponíveis na nuvem: `cd` para esta pasta
 # Resumo dos Experimentos
 Nesta seção são descritos as informações mais relevantes do experimento, com o intuito de criar um registro de fácil consulta.
 
-| Experimento    | Épocas | Pré-Treino       | Modelo   | Batch Size |
-|----------------|--------|------------------|----------|------------|
-| YOLOv5_UAVDT_0 | 50     | COCO (300 Épocas)| YOLOv5 S | 16         |
-| YOLOv5_UAVDT_1 | 50     | COCO (300 Épocas)| YOLOv5 M | 16         |
-| YOLOv5_UAVDT_3 | 50     | COCO (300 Épocas)| YOLOv5 L | 8          |
-| YOLOv5_UAVDT_4 | 50     | COCO (300 Épocas)| YOLOv5 X | 8          |
-| YOLOv5_UAVDT_5 | 50     | NÃO              | YOLOv5 S | 16         |
-| YOLOv5_UAVDT_6 | 50     | NÃO              | YOLOv5 M | 16         |
-| YOLOv5_UAVDT_7 | 50     | NÃO              | YOLOv5 L | 16         |
-| YOLOv5_UAVDT_8 | 50     | NÃO              | YOLOv5 X | 16         |
+| Experimento      | Épocas | Pré-Treino       | Modelo   | Batch Size | Hyperparams|
+|------------------|--------|------------------|----------|------------|------------|
+| YOLOv5_UAVDT_0   | 50     | COCO (300 Épocas)| YOLOv5 S | 16         | Scratch    |
+| YOLOv5_UAVDT_1   | 50     | COCO (300 Épocas)| YOLOv5 M | 16         | Scratch    |
+| YOLOv5_UAVDT_2   | 50     | COCO (300 Épocas)| YOLOv5 L | 8          | Scratch    |
+| YOLOv5_UAVDT_3   | 50     | COCO (300 Épocas)| YOLOv5 X | 8          | Scratch    |
+| YOLOv5_UAVDT_4   | 50     | YOLOv5_UAVDT_0   | YOLOv5 S | 16         | Finetune   |
+| YOLOv5_UAVDT_5   | 50     | YOLOv5_UAVDT_1   | YOLOv5 M | 16         | Finetune   |
+| YOLOv5_UAVDT_6   | 50     | YOLOv5_UAVDT_2   | YOLOv5 L | 8          | Finetune   |
+| YOLOv5_UAVDT_7   | 50     | YOLOv5_UAVDT_3   | YOLOv5 X | 8          | Finetune   |
+| YOLOv5_UAVDT_301 | 300    | COCO (300 Épocas)| YOLOv5 S | 16         | Finetune   |
+| YOLOv5_UAVDT_302 | 300    | COCO (300 Épocas)| YOLOv5 L | 16         | Finetune   |
 <br>
 
 ## Comentários

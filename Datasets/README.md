@@ -23,3 +23,11 @@ Para criar uma cópia simbólica do UAVDT no formato requerido pelo YOLOv5 para 
 ```bash
 python ../utils/uavdt_to_yolov5.py --conjunto treinoEteste --dest-folder ./UAVDT_YOLOv5
 ```
+
+Para criar uma cópia simbólica do UAVDT com apenas os primeiros 20 frames de cada vídeo (útil para testes rápidos).
+```bash
+#cd into the full dataset, UAVDT/UAV-benchmark-M
+dest="$HOME/Desktop/Datasets/UAVDT_minimal/UAV-benchmark-M";
+echo $dest;
+for i in $(ls); do for k in $(ls ./$i/ | head -20); do mkdir -p $dest/$i && cp -al ./$i/$k  $dest/$i/$k ; done; done
+```
