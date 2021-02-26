@@ -21,7 +21,9 @@
 
 # Arquivos criados durante os experimentos (são salvos apenas na nuvem)
 # Preservar apenas os notebooks
-**/RedesNeurais/*/*
+**/RedesNeurais/*/*/*
+!**/RedesNeurais/*/logs/
+!**/RedesNeurais/*/logs/*.ipynb
 !**/RedesNeurais/*/*.ipynb
 !**/RedesNeurais/*/*.sh
 !**/RedesNeurais/*/hyp.*.yaml
