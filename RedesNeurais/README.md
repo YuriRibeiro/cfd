@@ -25,45 +25,48 @@ Nesta seção são descritos as informações mais relevantes do experimento, co
 <br>
 
 ## Comentários
-Nesta seção, são expostas as principais características exploradas em cada experimento.
+Nesta seção, são expostas as principais características exploradas no treinamento de cada experimento.
 
-- YOLOv5_UAVDT_X  (X = 1,2,...,8)
-  - Vídeos do Dataset:
-    - Conténdo todas as situações (dia, noite, etc.)
-  - Pré-processamento das imagens
-    - Zonas de ignore borradas fortemente com filtro gaussiano.
-  - Características da rede:
-    - Resolução de entrada: 640
-    - Otimizador: adam
+
+- Vídeos do Dataset:
+  - Conténdo todas as situações (dia, noite, etc.).
+- Pré-processamento das imagens
+  - Zonas de ignore borradas fortemente com filtro gaussiano. YOLOv5_UAVDT_X  (X = 301, 302).
+  - Zonas de ignore substituídas pela cor preta. YOLOv5_UAVDT_X  (X = 0,1,2,...,7).
+- Características da rede:
+  - Resolução de entrada: 640
+  - Otimizador: adam
 
 <br>
 
 ## Resultados Detecção e Rastreamento (MOT)
 <br>
 
-| Experimento    | mAP    | AP@0.5 | AP@0.75 | Curva PR |
-|----------------|--------|--------|---------|----------|
-| YOLOv5_UAVDT_0 |        |        |         |          |
-| YOLOv5_UAVDT_1 |        |        |         |          |
-| YOLOv5_UAVDT_3 |        |        |         |          |
-| YOLOv5_UAVDT_4 |        |        |         |          |
-| YOLOv5_UAVDT_5 |        |        |         |          |
-| YOLOv5_UAVDT_6 |        |        |         |          |
-| YOLOv5_UAVDT_7 |        |        |         |          |
-| YOLOv5_UAVDT_8 |        |        |         |          |
+| Experimento      | mAP    | AP@0.5 | AP@0.75 | Curva PR |
+|------------------|--------|--------|---------|----------|
+| YOLOv5_UAVDT_0   |        |        |         |          |
+| YOLOv5_UAVDT_1   |        |        |         |          |
+| YOLOv5_UAVDT_3   |        |        |         |          |
+| YOLOv5_UAVDT_4   |        |        |         |          |
+| YOLOv5_UAVDT_5   |        |        |         |          |
+| YOLOv5_UAVDT_6   |        |        |         |          |
+| YOLOv5_UAVDT_7   |        |        |         |          |
+| YOLOv5_UAVDT_301 |        |        |         |          |
+| YOLOv5_UAVDT_302 |        |        |         |          |
 
 <sub>mAP = AP@0.5:0.95</sub>
 <br>
 <br>
 
 
-| Experimento    | MOTA   | MOTP   | MT      |ML       |FMT      |IDSW     | FP      |TP       |
-|----------------|--------|--------|---------|---------|---------|---------|---------|---------|
-| YOLOv5_UAVDT_0 |        |        |         |         |         |         |         |         |
-| YOLOv5_UAVDT_1 |        |        |         |         |         |         |         |         |
-| YOLOv5_UAVDT_3 |        |        |         |         |         |         |         |         |
-| YOLOv5_UAVDT_4 |        |        |         |         |         |         |         |         |
-| YOLOv5_UAVDT_5 |        |        |         |         |         |         |         |         |
-| YOLOv5_UAVDT_6 |        |        |         |         |         |         |         |         |
-| YOLOv5_UAVDT_7 |        |        |         |         |         |         |         |         |
-| YOLOv5_UAVDT_8 |        |        |         |         |         |         |         |         |
+| Experimento      | MOTA   | MOTP   | MT      |ML       |FMT      |IDSW     | FP      |TP       |
+|------------------|--------|--------|---------|---------|---------|---------|---------|---------|
+| YOLOv5_UAVDT_0   |        |        |         |         |         |         |         |         |
+| YOLOv5_UAVDT_1   |        |        |         |         |         |         |         |         |
+| YOLOv5_UAVDT_3   |        |        |         |         |         |         |         |         |
+| YOLOv5_UAVDT_4   |        |        |         |         |         |         |         |         |
+| YOLOv5_UAVDT_5   |        |        |         |         |         |         |         |         |
+| YOLOv5_UAVDT_6   |        |        |         |         |         |         |         |         |
+| YOLOv5_UAVDT_7   |        |        |         |         |         |         |         |         |
+| YOLOv5_UAVDT_301 |        |        |         |         |         |         |         |         |
+| YOLOv5_UAVDT_302 |        |        |         |         |         |         |         |         |
