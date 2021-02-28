@@ -7,3 +7,6 @@
 [submodule "Submodules/HOTA-metrics"]
 	path = Submodules/HOTA-metrics
 	url = https://github.com/JonathonLuiten/HOTA-metrics.git
+[submodule "Submodules/yolov3"]
+	path = Submodules/yolov3
+	url = https://github.com/ultralytics/yolov3.git
