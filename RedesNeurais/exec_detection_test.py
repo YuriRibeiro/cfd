@@ -14,6 +14,7 @@ import shutil
 import subprocess
 import argparse
 import json
+import glob
 
 this_file_dir = os.path.abspath(os.path.dirname(__file__))
 
@@ -35,8 +36,9 @@ class YOLOv5_UAVDT_CONFIG:
     data_yaml = """
                 # train and val datasets (image directory or *.txt file with image paths)
 
-                train: ../../../Datasets/UAVDT_YOLOv5/train/images/
-                test: ../../../Datasets/UAVDT_YOLOv5/test/images/
+                #train: ../../../Datasets/UAVDT_YOLOv5/train/images/
+                #test: ../../../Datasets/UAVDT_YOLOv5/test/images/
+                val: ../../../Datasets/UAVDT_YOLOv5/test/images/
 
                 # number of classes
                 nc: 3
@@ -112,7 +114,6 @@ class YOLOv5_UAVDT_DET(YOLOv5_UAVDT_CONFIG):
 
         opt = self.opt
         os.chdir(yv5_path)
-        original_path = os.getcwd()
 
         shell_command = ["python", str(test_py_path),
                         "--weights", str(weights_file_path),
@@ -156,49 +157,54 @@ class YOLOv5_UAVDT_DET(YOLOv5_UAVDT_CONFIG):
                     print(output.strip())
                 break
         
+        os.chdir(self.this_file_dir)
+        
         # Create one file with detetions for each one video:
-        
         # Open the "coco format" det json file
-        os.chdir(original_path)
-        json_path = os.path.join(self.output_dir_path, "best_predictions.json")
-        test_set_det = { k:[] for k in self.movies_teste}
-        with open(json_path) as f:
-            data = json.load(f)
+        videos = os.listdir(os.path.join(self.this_file_dir, self.experimento, self.project))
 
-        for ann in data:
-            vid, img_id = ann['image_id'].split("_")
-            if not vid in self.movies_teste: continue
-            x,y,w,h = ann['bbox']
-            x, w = float(x), float(w)
-            y, h = float(y), float(h)
-            score = ann['score']
-            # Note that the class doesn't appear.
-            test_set_det[vid].append(f"{int(img_id[3:])},-1,{x},{y},{w},{h},{score},1,-1")
+        for video in videos:
+            output_path = os.path.join(self.this_file_dir, self.experimento, self.project, video)
 
-        output_dir_path = os.path.join(self.output_dir_path, f"det_{self.name}")
-        if os.path.exists(output_dir_path): shutil.rmtree(output_dir_path)
-        os.mkdir(output_dir_path)
+            json_path = os.path.join(output_path, "best_predictions.json")
+            test_set_det = { k:[] for k in self.movies_teste}
+            with open(json_path) as f:
+                data = json.load(f)
 
-        for k,v in test_set_det.items():
-            output_file_path = os.path.join(output_dir_path, f"{k}.txt")
-            with open(output_file_path, "w") as f:
-                f.write(v[0])
-                for det in v[1:]:
-                    f.write(f"\n{det}")
-        
-        det_parameters_file_path = os.path.join(self.output_dir_path, 'detection_parameters.txt')
-        # save args in "fromfile_prefix_chars" format
-        # https://docs.python.org/3/library/argparse.html
-        print(f"[INFO] Salvando argumentos em {det_parameters_file_path}.")
-        with open(det_parameters_file_path, "w") as f:
-            f.write(f"{shell_command[2]}\n")
-            for item in shell_command[3:]:
-                f.write(f"\n{item}")
+            for ann in data:
+                vid, img_id = ann['image_id'].split("_")
+                if not vid in self.movies_teste: continue
+                x,y,w,h = ann['bbox']
+                x, w = float(x), float(w)
+                y, h = float(y), float(h)
+                score = ann['score']
+                # Note that the class doesn't appear.
+                test_set_det[vid].append(f"{int(img_id[3:])},-1,{x},{y},{w},{h},{score},1,-1")
+
+            output_dir_path = os.path.join(output_path, f"det_{self.name}")
+            if os.path.exists(output_dir_path): shutil.rmtree(output_dir_path)
+            os.mkdir(output_dir_path)
+
+            for k,v in test_set_det.items():
+                output_file_path = os.path.join(output_dir_path, f"{k}.txt")
+                with open(output_file_path, "w") as f:
+                    f.write(v[0])
+                    for det in v[1:]:
+                        f.write(f"\n{det}")
+            
+            det_parameters_file_path = os.path.join(output_path, 'detection_parameters.txt')
+            # save args in "fromfile_prefix_chars" format
+            # https://docs.python.org/3/library/argparse.html
+            print(f"[INFO] Salvando argumentos em {det_parameters_file_path}.")
+            with open(det_parameters_file_path, "w") as f:
+                f.write(f"{shell_command[2]}\n")
+                for item in shell_command[3:]:
+                    f.write(f"\n{item}")
 
         print(f"[INFO] Removendo {yv5_path}, {data_yaml_path}")
         shutil.rmtree(yv5_path)
         os.remove(data_yaml_path)
-        print(f"[INFO] Resultados salvos em {self.output_dir_path}")
+        print(f"[INFO] Resultados salvos em {output_path}")
         # Final msg
         print("[INFO] Fim da execução.")
 
