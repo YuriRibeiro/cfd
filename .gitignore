@@ -22,6 +22,7 @@
 # Arquivos criados durante os experimentos (são salvos apenas na nuvem)
 # Preservar apenas os notebooks
 **/RedesNeurais/*/*/*
+**/RedesNeurais/gsutil_organizer.ipynb
 !**/RedesNeurais/*/logs/
 !**/RedesNeurais/*/logs/*.ipynb
 !**/RedesNeurais/*/*.ipynb
