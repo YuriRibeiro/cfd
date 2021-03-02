@@ -3,8 +3,8 @@ from tensorboard.backend.event_processing import event_accumulator
 import os, pathlib
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib import cycler
 import numpy as np
+import datetime
 
 """
 ['train/box_loss', 'train/obj_loss', 'train/cls_loss',
@@ -85,14 +85,19 @@ class YV5_Config:
             'fitness' : 'Fitness'
         }
         return table[name]
+
+    @staticmethod
+    def plot_exp_title(name):
+        table = {
+            'yv5_4' : 'yv5_S',
+            'yv5_5' : 'yv5_M',
+            'yv5_6' : 'yv5_L',
+            'yv5_7' : 'yv5_X',
+        }
+        return table[name]
     
     @staticmethod
     def color_cycler():
-        # One color for each network
-
-        #custom_cycler = (cycler(color=['#EE6666', '#3388BB', '#9988DD',
-        #                                '#88BB44', '#EECC55', '#FFBBBB']))
-        #
         colors = {'yv5_7' : '#EE6666',
                   'yv5_6' : '#3388BB',
                   'yv5_5' : '#9988DD',
@@ -108,6 +113,9 @@ class YV5_Config:
         w = [0.0, 0.0, 0.1, 0.9]  # weights for [P, R, mAP@0.5, mAP@0.5:0.95]
         return (x[:, :4] * w).sum(1)
 
+    @staticmethod
+    def get_vline_pos():
+        return [50]
 
 class YV5_Train_Data(YV5_Config):
     def __init__(self):
@@ -182,6 +190,26 @@ class YV5_Train_Data(YV5_Config):
                 cat = pd.concat([cdf_0, cdf_1], axis=0) #concat linewise
                 cdf_0 = cat
             self.cats[nets[-1]] = cat.copy() #store a copy of the concat using the last name.
+    
+
+    def get_best_fitness_points(self):
+        """
+        Return: Dict whose keys are the exp_names of cat_exps (self.get_cat_exps_labels())
+                and the values are a list cotaining the best fitness point for each exp_name.
+        """
+        vlines = [0] + self.get_vline_pos() #index
+        vlines = vlines + [vlines[-1] + 50]
+        exps = self.get_cat_exps_labels()
+        best_points = {}
+
+        for exp in exps:
+            best_points[exp] = []
+            fitness = self.cats[exp]['fitness']
+            for idx in range(len(vlines)-1):
+                best_x = fitness.iloc[ vlines[idx] : vlines[idx+1]].argmax()
+                best_points[exp].append(best_x+vlines[idx])
+        
+        return best_points
 
     def get_data_labels(self):
         return self.ea.Tags()['scalars']
@@ -204,13 +232,18 @@ class YV5_Train_Data(YV5_Config):
         """
         return self.cats
         
-    def plot_cat_metrics(self):
+    def plot_cat_metrics(self, save = False):
         metrics = self.plot_fields()['metrics']
         experiments = self.get_cat_exps_labels()
         numexp = len(experiments)
-        
-        figsize = (14,12)
+        root = pathlib.Path(__file__).parent
+        output_dir = root /'plots'/'yv5'/'metric'
+        output_dir.mkdir(parents=True, exist_ok=True)
+        start_time = datetime.datetime.now()
+        time_stamp = start_time.strftime("%d_%B_%Y_%Hh_%Mm")
 
+        figsize = (16,14)
+        vline_pos = 50
         for metric in metrics:
             with plt.style.context('bmh'):
                 fig, ax = plt.subplots(3,2, figsize = figsize, constrained_layout=True)
@@ -230,20 +263,25 @@ class YV5_Train_Data(YV5_Config):
                 y = filtered_df[metric]
 
                 fitness = self.cats[exp]['fitness']
-                best_x = fitness.iloc[:50].argmax()
+                best_x = fitness.iloc[:vline_pos].argmax()
                 best_y = y.iloc[best_x]
                 ax[idx].plot(best_x,best_y, 'k*', markersize=10)
-                best_x = fitness.iloc[50:100].argmax() + 50
+                best_x = fitness.iloc[vline_pos:100].argmax() + vline_pos
                 best_y = y.iloc[best_x]
                 ax[idx].plot(best_x,best_y, 'k*', markersize=10)
 
-                Plot.plot(x,y,fig,ax[idx],c, exp)
+                Plot.plot(x,y,fig,ax[idx],c, self.plot_exp_title(exp))
                 Plot.plot(x,y,fig,axbig,c)
-                ax[idx].axvline(x=50, color='black', linestyle='--', linewidth = 1)
+                ax[idx].axvline(x=vline_pos, color='black', linestyle='--', linewidth = 1,alpha=0.5)
                 
+                
+                ax[idx].set_xticks(list(ax[idx].get_xticks()) + [vline_pos] )
                 xticks = ax[idx].get_xticks()
                 xlabels = []
                 for val in xticks:
+                    if val == vline_pos:
+                        xlabels.append(f"0")
+                        continue
                     if val > 0:
                         val -= 1
                     if val in steps:
@@ -251,24 +289,43 @@ class YV5_Train_Data(YV5_Config):
                     else:
                         xlabels.append("")
                 ax[idx].set_xticklabels(xlabels)
+                ax[idx].tick_params(axis='both', which='major', labelsize=15)
+                #ax[idx].set_xtickfontsize(16)
+                #ax[idx].tick_params(width=8)
             
-            axbig.axvline(x=50, color='black', linestyle='--', linewidth = 1)
+            axbig.axvline(x=vline_pos, color='black', linestyle='--', linewidth = 1, alpha=0.5)
             lines_labels = [ax.get_legend_handles_labels() for ax in fig.axes]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
             fig.legend(lines, labels, prop={'size':20}, ncol=2, bbox_to_anchor=(1, 0.145), bbox_transform=plt.gcf().transFigure)
-
+            
+            axbig.set_xticks(list(axbig.get_xticks()) + [vline_pos] )
             xticks = axbig.get_xticks()
             xlabels = []
             for val in xticks:
+                if val == vline_pos:
+                    xlabels.append(f"0")
+                    continue
                 if val > 0:
                     val -= 1
                 if val in steps:
                     xlabels.append(str(steps[val]))
                 else:
                     xlabels.append("")
+            
             axbig.set_xticklabels(xlabels)
-    
-        plt.savefig("metrics.pdf")
+            axbig.tick_params(axis='both', which='major', labelsize=15)
+
+            #axbig.set_xtickfontsize(16)
+            #axbig.tick_params(width=8)
+
+            output_file_path = output_dir / f'{self.plot_field_title(metric)}_cat4567_{time_stamp}.pdf'
+            
+            if save:
+                plt.savefig(output_file_path)
+
+
+
+
 
 class Plot:
     def __init__(self): pass
@@ -285,7 +342,8 @@ if __name__ == '__main__':
     root = pathlib.Path(__file__).parent
     os.chdir(root)
     a = YV5_Train_Data()
-    a.plot_cat_metrics()
+    a.plot_cat_metrics(save = True)
+    #a.plot_cat_trainloss(save = False):
     pass
 
 
