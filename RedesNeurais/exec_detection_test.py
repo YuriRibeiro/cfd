@@ -28,7 +28,14 @@ class YOLOv5_UAVDT_CONFIG:
     weight_paths = {"YOLOv5_UAVDT_0" : yv5_weigth_path("YOLOv5_UAVDT_0", "21_Feb_2021_18h_17m"),
                     "YOLOv5_UAVDT_1" : yv5_weigth_path("YOLOv5_UAVDT_1", "21_Feb_2021_19h_26m"),
                     "YOLOv5_UAVDT_2" : yv5_weigth_path("YOLOv5_UAVDT_2", "21_Feb_2021_21h_42m"),
-                    "YOLOv5_UAVDT_3" : yv5_weigth_path("YOLOv5_UAVDT_3", "22_Feb_2021_11h_36m")}
+                    "YOLOv5_UAVDT_3" : yv5_weigth_path("YOLOv5_UAVDT_3", "22_Feb_2021_11h_36m"),
+                    "YOLOv5_UAVDT_4" : yv5_weigth_path("YOLOv5_UAVDT_4", "25_Feb_2021_13h_13m"),
+                    "YOLOv5_UAVDT_5" : yv5_weigth_path("YOLOv5_UAVDT_5", "26_Feb_2021_04h_26m"),
+                    "YOLOv5_UAVDT_6" : yv5_weigth_path("YOLOv5_UAVDT_6", "26_Feb_2021_04h_25m"),
+                    "YOLOv5_UAVDT_7" : yv5_weigth_path("YOLOv5_UAVDT_7", "26_Feb_2021_04h_25m"),
+                  "YOLOv5_UAVDT_301" : yv5_weigth_path("YOLOv5_UAVDT_7", "13_October_2020_14h_48m_24s"),
+                  "YOLOv5_UAVDT_302" : yv5_weigth_path("YOLOv5_UAVDT_7", "09_October_2020_15h_11m_52s")}
+            
     
     movies_teste = ["M0203", "M0205", "M0208", "M0209", "M0403", "M0601", \
                     "M0602", "M0606", "M0701", "M0801", "M0802", "M1001", "M1004", \
