@@ -29,3 +29,4 @@
 !**/RedesNeurais/*/*.sh
 !**/RedesNeurais/*/hyp.*.yaml
 !**/RedesNeurais/*.py
+**/RedesNeurais/**/*.pdf
