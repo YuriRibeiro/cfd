@@ -78,14 +78,14 @@ class YV5_Config:
             'metrics/mAP_0.5' : 'mAP@0.5',
             'metrics/mAP_0.5:0.95' : 'mAP@0.5:0.95',
             'train/box_loss' : 'Box Loss',
-            'train/obj_loss': 'Object Loss',
+            'train/obj_loss': 'Object. Loss',
             'train/cls_loss' : 'Classif. Loss',
             'val/box_loss' : 'Box Loss',
-            'val/obj_loss' : 'Object Loss',
+            'val/obj_loss' : 'Object. Loss',
             'val/cls_loss' : 'Classif. Loss',
-            'x/lr0' : 'Learning Rate 0',
-            'x/lr1' : 'Learning Rate 1',
-            'x/lr2' : 'Learning Rate 2',
+            'x/lr0' : 'LR 0 (Box)',
+            'x/lr1' : 'LR 1 (Object.)',
+            'x/lr2' : 'LR 2 (Classif.)',
             'fitness' : 'Fitness'
             }
         return table[name]
@@ -106,7 +106,11 @@ class YV5_Config:
                 'yv5_7' : '#EE6666',
                 'yv5_6' : '#3388BB',
                 'yv5_5' : '#9988DD',
-                'yv5_4' : '#88BB44'
+                'yv5_4' : '#88BB44',
+                'yv5_3' : '#EE6666',
+                'yv5_2' : '#3388BB',
+                'yv5_1' : '#9988DD',
+                'yv5_0' : '#88BB44'
                 }
         return colors
     
@@ -122,6 +126,13 @@ class YV5_Config:
     @staticmethod
     def get_vline_pos():
         return [50]
+
+    @staticmethod
+    def learning_rates_schedules():
+        return {
+                'Scratch' : ['yv5_0', 'yv5_1', 'yv5_2', 'yv5_3'],
+                'Finetune' : ['yv5_4', 'yv5_5', 'yv5_6', 'yv5_7']
+                }
 
 class YV5_Train_Data(YV5_Config):
     def __init__(self):
@@ -242,23 +253,15 @@ class YV5_Train_Data(YV5_Config):
     def plot_cat_metrics(self, save = False):
         metrics = self.plot_fields()['metrics']
         experiments = self.get_cat_exps_labels()
-        numexp = len(experiments)
-        root = pathlib.Path(__file__).parent
-        output_dir = root /'plots'/'yv5'/'metric'
-        output_dir.mkdir(parents=True, exist_ok=True)
-        start_time = datetime.datetime.now()
-        time_stamp = start_time.strftime("%d_%B_%Y_%Hh_%Mm")
-        figsize = (16,14)
 
         for metric in metrics:
             with plt.style.context('bmh'):
-                fig, ax = plt.subplots(3,2, figsize = figsize, constrained_layout=True)
+                fig, ax = plt.subplots(3,2, figsize = Plot.properties('figsize_big'),
+                                         constrained_layout=True)
                 gs = ax[2, 0].get_gridspec()
                 for axe in ax[2, :]: axe.remove()
                 axbig = fig.add_subplot(gs[2, :])
-                ax = ax.flatten()            
-                fig.suptitle(self.plot_field_title(metric), fontsize=26)
-                axbig.set_xlabel('Épocas', fontsize=18)
+                ax = ax.flatten()
 
             for idx, exp in enumerate(experiments):
                 filtered_df = self.cats[exp][metrics]
@@ -270,82 +273,42 @@ class YV5_Train_Data(YV5_Config):
                 # Plot best fitness points
                 for best_x in self.best_fitness_points[exp]:
                     best_y = y.iloc[best_x]
-                    ax[idx].plot(best_x,best_y, 'k*', markersize=10)
+                    Plot.plot_best_fitness_points(ax[idx], best_x, best_y)
 
                 # Plot vertical lines
-                for vline_pos in self.get_vline_pos():
-                    ax[idx].axvline(x=vline_pos, color='black', linestyle='--',
-                                    linewidth = 0.8,alpha=0.8)
-                    if idx == 0:
-                        axbig.axvline(x=vline_pos, color='black', linestyle='--',
-                                     linewidth = 0.8, alpha=0.8)
+                Plot.plot_vlines(self.get_vline_pos(), ax[idx])
+                if idx == 0:
+                    Plot.plot_vlines(self.get_vline_pos(), axbig)
 
                 # Plot x,y data from dataframe
                 Plot.plot(x,y,fig,ax[idx],c, self.plot_exp_title(exp))
                 Plot.plot(x,y,fig,axbig,c)
-                
-                # Adjust ticks and labels in the small frame
-                xtick_pattern_step = 10
-                xticks_pattern = [i for i in range(0,x.max()+xtick_pattern_step, xtick_pattern_step)]
-                axe = ax[idx]
-                axe.set_xticks(xticks_pattern)
-                for vline in self.get_vline_pos():
-                    # Add vlines
-                    axe.set_xticks(list(axe.get_xticks()) + [vline])
-                xticks = axe.get_xticks()
-                xlabels = []
-                for val in xticks:
-                    if val == 0 or val in self.get_vline_pos():
-                        xlabels.append('0')
-                    elif val > 0 and val-1 in steps:
-                        xlabels.append(str(steps[val-1]))
-                    else:
-                        xlabels.append('')
-                axe.set_xticklabels(xlabels)
-                axe.tick_params(axis='both', which='major', labelsize=15)
-                
-            lines_labels = [ax.get_legend_handles_labels() for ax in fig.axes]
-            lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            fig.legend(lines, labels, prop={'size':20}, ncol=2, 
-                       bbox_to_anchor=(1, 0.145), bbox_transform=plt.gcf().transFigure)
+
+            # Adjust ticks and labels in the small frame
+            valid_axes = [*ax[:4], axbig]
+            Plot.adjust_xticks(valid_axes, steps, self.get_vline_pos(), x)
+
+            # Place Figure Title
+            Plot.set_fig_suptitle(fig, self.plot_field_title(metric))
             
-            # axbig ticks and legends
-            xtick_pattern_step = 10
-            xticks_pattern = [i for i in range(0,x.max()+xtick_pattern_step, xtick_pattern_step)]
-            axe = axbig
-            axe.set_xticks(xticks_pattern)
-            for vline in self.get_vline_pos():
-                # Add vlines
-                axe.set_xticks(list(axe.get_xticks()) + [vline])
-            xticks = axe.get_xticks()
-            xlabels = []
-            for val in xticks:
-                if val == 0 or val in self.get_vline_pos():
-                    xlabels.append('0')
-                elif val > 0 and val-1 in steps:
-                    xlabels.append(str(steps[val-1]))
-                else:
-                    xlabels.append('')
-            axe.set_xticklabels(xlabels)
-            axbig.tick_params(axis='both', which='major', labelsize=15)
+            # Place axbig Title
+            Plot.set_xlabel(axbig, 'Épocas')
+            
+            # Place legends
+            Plot.set_legends(fig, fig.axes, bbox_to_anchor=(1, 0.145))
 
-            output_file_path = output_dir / f'{self.plot_field_title(metric)}_cat4567_{time_stamp}.pdf'
-            if save:
-                plt.savefig(output_file_path)
+            # Place indexes            
+            for idx, axe in enumerate(valid_axes):
+                Plot.set_title(axe, f'({idx+1})')
 
-    def plot_cat_trainloss(self, save = False, plot_metric = 'train_loss'):
+            output_file_path = Plot.make_output_file_path(metric, self.plot_field_title(metric))
+            if save: plt.savefig(output_file_path)
+
+    def _plot_cat_loss(self, save = False, plot_metric = 'train_loss'):
         metrics = self.plot_fields()[plot_metric]
         experiments = self.get_cat_exps_labels()
-        numexp = len(experiments)
-        root = pathlib.Path(__file__).parent
-        output_dir = root /'plots'/'yv5'/plot_metric
-        output_dir.mkdir(parents=True, exist_ok=True)
-        start_time = datetime.datetime.now()
-        time_stamp = start_time.strftime("%d_%B_%Y_%Hh_%Mm")
 
-        figsize = (16,14)
         const = 0
-
         final_title = ''
         for metric in metrics:
             final_title += f', {self.plot_field_title(metric)}'
@@ -354,12 +317,12 @@ class YV5_Train_Data(YV5_Config):
         final_title = f'{tipo} {final_title}'
 
         with plt.style.context('bmh'):
-                fig, ax = plt.subplots(4,3, figsize = figsize, constrained_layout=True, sharex=True)
+                fig, ax = plt.subplots(4,3, figsize = Plot.properties('figsize_big'),
+                                      constrained_layout=True, sharex=True)
                 ax = ax.flatten()
-                fig.suptitle(final_title, fontsize=26)
-                fig2, ax2 = plt.subplots(1,3, figsize=(16,6))
+                fig2, ax2 = plt.subplots(1,3, figsize=Plot.properties('figsize_medium'),
+                                        constrained_layout=True)
                 ax2 = ax2.flatten()
-                fig2.suptitle(final_title, fontsize=26)
         
         for metric in metrics:
             idx = 0 + const
@@ -373,58 +336,90 @@ class YV5_Train_Data(YV5_Config):
                 # Plot best fitness points
                 for best_x in self.best_fitness_points[exp]:
                     best_y = y.iloc[best_x]
-                    ax[idx].plot(best_x,best_y, 'k*', markersize=10)
+                    Plot.plot_best_fitness_points(ax[idx], best_x, best_y)
                 
                 # Plot vertical lines and add ticks to these lines
-            
-                for vline_pos in self.get_vline_pos():
-                    ax[idx].axvline(x=vline_pos, color='black', linestyle='--',
-                                    linewidth = 0.8,alpha=0.8)
-                    if idx == const:                        
-                        ax2[const].axvline(x=vline_pos, color='black', linestyle='--',
-                                        linewidth = 0.8,alpha=0.8)
-                    
+                Plot.plot_vlines(self.get_vline_pos(), ax[idx])
+                if idx == const:
+                    Plot.plot_vlines(self.get_vline_pos(), ax2[const])
+                    Plot.set_title(ax2[idx], f'({idx+1})')
+                                        
                 # Plot x,y dataframe points
                 Plot.plot(x, y, fig, ax[idx], c, self.plot_exp_title(exp))
                 Plot.plot(x, y, fig, ax2[const], c, self.plot_exp_title(exp))
-                
+
                 idx += 3
                 if idx >= 12: break
             const += 1   
 
+        # Adjust xticks
+        Plot.adjust_xticks([*ax, *ax2], steps, self.get_vline_pos(), x)
+
+        # Figure Sup Title:
+        Plot.set_fig_suptitle(fig, final_title)
+        Plot.set_fig_suptitle(fig2, final_title)
+        
+        # Place Indexes for each axe:
+        for idx in range(len(ax)):
+            Plot.set_title(ax[idx], f'({idx+1})')
+        
+        # Lower Axe Label:
+        Plot.set_xlabel(ax[-2], 'Épocas')
+        Plot.set_xlabel(ax2[-2], 'Épocas')
+
+        # Legends:
+        Plot.set_legends(fig, fig.axes[::3], bbox_to_anchor=(1.02, 2.1))
+        
+        # Save Figure:
+        
+        if save: 
+            output_file_path = Plot.make_output_file_path(plot_metric,"" )
+            fig.savefig(output_file_path)
+            output_file_path = Plot.make_output_file_path(plot_metric+"_resumed","" )
+            fig2.savefig(output_file_path)
+        
+    def plot_cat_trainloss(self, save=False):
+        self._plot_cat_loss(save=save, plot_metric = 'train_loss')
+    
+    def plot_cat_testloss(self, save=False):
+        self._plot_cat_loss(save=save, plot_metric = 'test_loss')
+
+    def plot_cat_learning_rates(self, save = False):
+        metrics = self.plot_fields()['lr']
+        figsize = Plot.properties('figsize_big')
+        
+        final_title = ''
+        for metric in metrics:
+            final_title += f', {self.plot_field_title(metric)}'
+        final_title = final_title[1:]
+
+        with plt.style.context('bmh'):
+                fig, ax = plt.subplots(3,1, figsize = figsize,
+                                       constrained_layout=True, sharex=True)
+                ax = ax.flatten()
+                exp = list(self.get_cat_exps_labels())[-1]
+                filtered_df = self.cats[exp][metrics]
+
+                for idx, metric in enumerate(metrics):
+                    steps = self.cats[exp]['steps']
+                    c = 'm'
+                    x = filtered_df.index
+                    y = filtered_df[metric]
+                    # Plot vertical lines
+                    Plot.plot_vlines(self.get_vline_pos(), ax[idx])
+                    # Plot x,y dataframe points
+                    Plot.plot(x, y, fig, ax[idx], c)
+                    # Set title
+                    Plot.set_title(ax[idx], f'({idx+1})')
+                
+        # Fig superior title 
+        Plot.set_fig_suptitle(fig, final_title)
+        # Set xlabel
+        Plot.set_xlabel(ax[idx], 'Épocas')
         # Change ticks from index to steps and format
-        xtick_pattern_step = 10
-        xticks_pattern = [i for i in range(0,x.max()+xtick_pattern_step, xtick_pattern_step)]
-        for axe in [*ax, *ax2]:
-            axe.set_xticks(xticks_pattern)
-            for vline in self.get_vline_pos():
-                # Add vlines
-                axe.set_xticks(list(axe.get_xticks()) + [vline])
-            
-            xticks = axe.get_xticks()
-            if 0 not in xticks:
-                axe.set_xticks(list(axe.get_xticks()) + [0])
-                xticks = axe.get_xticks()
-            xlabels = []
-            for val in xticks:
-                if val == 0 or val in self.get_vline_pos():
-                     xlabels.append('0')
-                elif val > 0 and val-1 in steps:
-                    xlabels.append(str(steps[val-1]))
-                else:
-                    xlabels.append('')
-            axe.set_xticklabels(xlabels)
-            axe.tick_params(axis='both', which='major', labelsize=15)
-        
-        lines_labels = [ax.get_legend_handles_labels() for ax in fig.axes[::3]]
-        lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-        fig.legend(lines, labels, prop={'size':20}, ncol=2, 
-                    bbox_to_anchor=(1, 2.3), bbox_transform=plt.gcf().transFigure)
-        
-
-        output_file_path = output_dir / f'{self.plot_field_title(metric)}_cat4567_{time_stamp}.pdf'
+        Plot.adjust_xticks(ax, steps, self.get_vline_pos(), x)
+        output_file_path = Plot.make_output_file_path(metric, self.plot_field_title(metric))
         if save: plt.savefig(output_file_path)
-
 
 class Plot:
     def __init__(self): pass
@@ -435,15 +430,93 @@ class Plot:
         for spine in ax.spines.values():
             spine.set_visible(False)
         return fig, ax, l
+    
+    @staticmethod
+    def plot_vlines(vlines_pos :'list', ax):
+        for pos in vlines_pos:
+            ax.axvline(x=pos, color='black', linestyle='--',
+                      linewidth = 0.8,alpha=0.8)                 
+    @staticmethod
+    def properties(name : 'str'):
+        d = {'tick_params' : {'axis':'both', 'which':'major', 'labelsize':15},
+            'figsize_big' : (16, 14),
+            'figsize_medium' : (16, 7) }
+        return d[name]
+    
+    @staticmethod
+    def make_output_file_path(metric, metric_spec, net='yv5', phase='train'):
+        """
+        metric: train_loss, test_loss, learning_rate, ...
+        metric_spec: box loss, object. loss, ...
+        """
+        root = pathlib.Path(__file__).parent
+        output_dir = root /'plots'/ net/ phase
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        start_time = datetime.datetime.now()
+        time_stamp = start_time.strftime("%d_%B_%Y_%Hh_%Mm")
+        metric = metric.replace("/", "_")
+        return output_dir / f'{metric}_cat4567_{time_stamp}.pdf'
+    
+    @staticmethod
+    def adjust_xticks(ax:'list', steps:'new index', vlines_pos, x:'old index'):
+        # Change ticks from index to steps and format
+        xtick_pattern_step = 10
+        xticks_pattern = [i for i in range(0,x.max()+xtick_pattern_step, xtick_pattern_step)]
+        for axe in [*ax]:
+            axe.set_xticks(xticks_pattern)
+            for vline in vlines_pos:
+                # Add vlines
+                axe.set_xticks(list(axe.get_xticks()) + [vline])
+            xticks = axe.get_xticks()
+            if 0 not in xticks:
+                axe.set_xticks(list(axe.get_xticks()) + [0])
+                xticks = axe.get_xticks()
+            xlabels = []
+            for val in xticks:
+                if val == 0 or val in vlines_pos:
+                     xlabels.append('0')
+                elif val > 0 and val-1 in steps:
+                    xlabels.append(str(steps[val-1]+1))
+                else:
+                    xlabels.append('')
+            axe.set_xticklabels(xlabels)
+            axe.tick_params(**Plot.properties('tick_params'))
+    
+    @staticmethod
+    def set_legends(fig, axes: 'list', **kwargs):
+        lines_labels = [ax.get_legend_handles_labels() for ax in axes]
+        lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+
+        args = {'prop' : {'size':20}, 'ncol' : 2, 'bbox_to_anchor' : (1.035, 2.3),
+               'bbox_transform' : plt.gcf().transFigure}
+        if len(kwargs) > 0:
+            for k,v in kwargs.items(): args[k] = v
+        
+        fig.legend(lines, labels, **args)
+    
+    @staticmethod
+    def set_xlabel(ax, xlabel):
+        ax.set_xlabel(xlabel, fontsize = 18, fontweight='bold', loc='center')
+    @staticmethod
+    def set_fig_suptitle(fig, title):
+        fig.suptitle(title, fontsize=26)
+    @staticmethod
+    def set_title(ax, title):
+        ax.set_title(title, fontsize=16, fontweight='bold', loc='left')
+    @staticmethod
+    def plot_best_fitness_points(ax,x,y):
+        ax.plot(x,y, 'k*', markersize=10)
 
 if __name__ == '__main__':
     #if DEBUG:
     root = pathlib.Path(__file__).parent
     os.chdir(root)
     a = YV5_Train_Data()
-    #a.plot_cat_metrics(save = False)
-    #a.plot_cat_trainloss(save = False, plot_metric='train_loss')
-    #a.plot_cat_trainloss(save = False, plot_metric='test_loss')
+    a.plot_cat_trainloss(save =         False)
+    a.plot_cat_metrics(save =           False)
+    a.plot_cat_testloss(save =          False)
+    a.plot_cat_learning_rates(save =    False)
     pass
 
 
