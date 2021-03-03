@@ -48,7 +48,7 @@ def test(data,
         device = select_device(opt.device, batch_size=batch_size)
 
         # Directories
-        save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
+        save_dir = Path(increment_path(Path(opt.project) / opt.name / f"{imgsz}x{imgsz}", exist_ok=opt.exist_ok))  # increment run
         (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
         # Load model
@@ -325,15 +325,15 @@ if __name__ == '__main__':
              )
 
     elif opt.task == 'study':  # run over a range of settings and save/plot
-        for weights in ['yolov3.pt', 'yolov3-spp.pt', 'yolov3-tiny.pt']:
-            f = 'study_%s_%s.txt' % (Path(opt.data).stem, Path(weights).stem)  # filename to save to
-            x = list(range(320, 800, 64))  # x axis
+        x = list(range(256, 1536 + 128, 128))  # x axis (image sizes)
+        for w in opt.weights:
+            f = f'study_{Path(opt.data).stem}_{Path(w).stem}.txt'  # filename to save to
             y = []  # y axis
             for i in x:  # img-size
-                print('\nRunning %s point %s...' % (f, i))
-                r, _, t = test(opt.data, weights, opt.batch_size, i, opt.conf_thres, opt.iou_thres, opt.save_json,
+                print(f'\nRunning {f} point {i}...')
+                r, _, t = test(opt.data, w, opt.batch_size, i, opt.conf_thres, opt.iou_thres, opt.save_json,
                                plots=False)
                 y.append(r + t)  # results and times
             np.savetxt(f, y, fmt='%10.4g')  # save
         os.system('zip -r study.zip study_*.txt')
-        plot_study_txt(f, x)  # plot
+        #plot_study_txt(x=x)  # plot

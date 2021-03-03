@@ -272,7 +272,7 @@ class YV5_Train_Data(YV5_Config):
 
                 Plot.plot(x,y,fig,ax[idx],c, self.plot_exp_title(exp))
                 Plot.plot(x,y,fig,axbig,c)
-                ax[idx].axvline(x=vline_pos, color='black', linestyle='--', linewidth = 1,alpha=0.5)
+                ax[idx].axvline(x=vline_pos, color='black', linestyle='--', linewidth = 0.8,alpha=0.8)
                 
                 
                 ax[idx].set_xticks(list(ax[idx].get_xticks()) + [vline_pos] )
@@ -293,7 +293,7 @@ class YV5_Train_Data(YV5_Config):
                 #ax[idx].set_xtickfontsize(16)
                 #ax[idx].tick_params(width=8)
             
-            axbig.axvline(x=vline_pos, color='black', linestyle='--', linewidth = 1, alpha=0.5)
+            axbig.axvline(x=vline_pos, color='black', linestyle='--', linewidth = 0.8, alpha=0.8)
             lines_labels = [ax.get_legend_handles_labels() for ax in fig.axes]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
             fig.legend(lines, labels, prop={'size':20}, ncol=2, bbox_to_anchor=(1, 0.145), bbox_transform=plt.gcf().transFigure)
