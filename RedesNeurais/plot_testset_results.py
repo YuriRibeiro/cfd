@@ -16,40 +16,9 @@ import datetime
 # DEBUG:
 DEBUG = False
 
-class YV5_Config:
+class Config:
     def __init__(self): pass
-
-    @staticmethod
-    def load_yv5_tb_paths():
-        root =  pathlib.Path(__file__).parent
-        make_path = lambda exp, date, tb: root / exp / 'YOLOv5_UAVDT_train' / f'{exp}-{date}' / tb
-        yv5_tb_paths = {
-            'yv5_0' : make_path('YOLOv5_UAVDT_0', '21_Feb_2021_18h_17m', 'events.out.tfevents.1613943087.febe.6899.0'),
-            'yv5_1' : make_path('YOLOv5_UAVDT_1', '21_Feb_2021_19h_26m', 'events.out.tfevents.1613947244.febe.4710.0'),
-            'yv5_2' : make_path('YOLOv5_UAVDT_2', '21_Feb_2021_21h_42m', 'events.out.tfevents.1613956332.febe.17826.0'),
-            'yv5_3' : make_path('YOLOv5_UAVDT_3', '22_Feb_2021_11h_36m', 'events.out.tfevents.1614005399.febe.29767.0'),
-            'yv5_4' : make_path('YOLOv5_UAVDT_4', '25_Feb_2021_13h_13m', 'events.out.tfevents.1614270487.febe.3970.0'),
-            'yv5_5' : make_path('YOLOv5_UAVDT_5', '26_Feb_2021_04h_26m', 'events.out.tfevents.1614325214.febe.32724.0'),
-            'yv5_6' : make_path('YOLOv5_UAVDT_6', '26_Feb_2021_04h_25m', 'events.out.tfevents.1614325182.febe.32230.0'),
-            'yv5_7' : make_path('YOLOv5_UAVDT_7', '26_Feb_2021_04h_25m', 'events.out.tfevents.1614325148.febe.31738.0')
-            }
-          #'yv5_301' : make_path('YOLOv5_UAVDT_301', '13_October_2020_14h_48m_24s', 'events.out.tfevents.1602612398.febe.21509.0'),
-          #'yv5_302' : make_path('YOLOv5_UAVDT_302', '09_October_2020_15h_11m_52s', 'events.out.tfevents.1602268152.febe.16062.0')}
-        
-        return yv5_tb_paths
     
-    @staticmethod
-    def load_cats():
-        return [
-            ('yv5_0', 'yv5_4'),
-            ('yv5_1', 'yv5_5'),
-            ('yv5_2', 'yv5_6'),
-            ('yv5_3', 'yv5_7')
-            ]
-                #(None, 'yv5_301'),
-                #(None, 'yv5_301')]]
-
-
     @staticmethod
     def load_tb_size_guidance():
         size_guidance = {
@@ -60,7 +29,7 @@ class YV5_Config:
             event_accumulator.HISTOGRAMS: 1
             }
         return size_guidance
-    
+
     @staticmethod
     def plot_fields():
         metrics = ['metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'fitness']
@@ -91,6 +60,62 @@ class YV5_Config:
         return table[name]
 
     @staticmethod
+    def fitness(ap_05, map_05_095):
+        # From Submodules/yolov5/train.py.
+        # This is the same fitness function for Submodules/yolov3/train.py.
+        # The fitness function is equivalent to sum(0.1*map0.5 + 0.9*map0.5:0.95).
+        # Ist est, a weighted combination of the AP metrics.
+        #w = [0.0, 0.0, 0.1, 0.9]  # weights for [P, R, mAP@0.5, mAP@0.5:0.95]
+        #return (x[:, :4] * w).sum(1)
+        return 0.1*ap_05 + 0.9*map_05_095
+    
+    @staticmethod
+    def get_vline_pos():
+        # Index of the end of the training sessions == epochs
+        return [50]
+
+class YV5_Config(Config):
+    def __init__(self): pass
+
+    @staticmethod
+    def get_nrows_plot_catloss():
+        return 4
+    
+    @staticmethod
+    def get_net_name():
+        return 'yv5'
+
+    @staticmethod
+    def load_tb_paths():
+        root =  pathlib.Path(__file__).parent
+        make_path_yv5 = lambda exp, date, tb: root / exp / 'YOLOv5_UAVDT_train' / f'{exp}-{date}' / tb
+
+        yv5_tb_paths = {
+            'yv5_0' : make_path_yv5('YOLOv5_UAVDT_0', '21_Feb_2021_18h_17m', 'events.out.tfevents.1613943087.febe.6899.0'),
+            'yv5_1' : make_path_yv5('YOLOv5_UAVDT_1', '21_Feb_2021_19h_26m', 'events.out.tfevents.1613947244.febe.4710.0'),
+            'yv5_2' : make_path_yv5('YOLOv5_UAVDT_2', '21_Feb_2021_21h_42m', 'events.out.tfevents.1613956332.febe.17826.0'),
+            'yv5_3' : make_path_yv5('YOLOv5_UAVDT_3', '22_Feb_2021_11h_36m', 'events.out.tfevents.1614005399.febe.29767.0'),
+            'yv5_4' : make_path_yv5('YOLOv5_UAVDT_4', '25_Feb_2021_13h_13m', 'events.out.tfevents.1614270487.febe.3970.0'),
+            'yv5_5' : make_path_yv5('YOLOv5_UAVDT_5', '26_Feb_2021_04h_26m', 'events.out.tfevents.1614325214.febe.32724.0'),
+            'yv5_6' : make_path_yv5('YOLOv5_UAVDT_6', '26_Feb_2021_04h_25m', 'events.out.tfevents.1614325182.febe.32230.0'),
+            'yv5_7' : make_path_yv5('YOLOv5_UAVDT_7', '26_Feb_2021_04h_25m', 'events.out.tfevents.1614325148.febe.31738.0')
+            }
+          #'yv5_301' : make_path_yv5('YOLOv5_UAVDT_301', '13_October_2020_14h_48m_24s', 'events.out.tfevents.1602612398.febe.21509.0'),
+          #'yv5_302' : make_path_yv5('YOLOv5_UAVDT_302', '09_October_2020_15h_11m_52s', 'events.out.tfevents.1602268152.febe.16062.0')}
+        return yv5_tb_paths
+    
+    @staticmethod
+    def load_cats():
+        return [
+            ('yv5_0', 'yv5_4'),
+            ('yv5_1', 'yv5_5'),
+            ('yv5_2', 'yv5_6'),
+            ('yv5_3', 'yv5_7')
+            ]
+            #(None, 'yv5_301'),
+            #(None, 'yv5_301')]]
+
+    @staticmethod
     def plot_exp_title(name):
         table = {
             'yv5_4' : 'yv5_S',
@@ -113,19 +138,6 @@ class YV5_Config:
                 'yv5_0' : '#88BB44'
                 }
         return colors
-    
-    @staticmethod
-    def fitness(x):
-        # From Submodules/yolov5/train.py :
-        # It is Equivalent to: sum(0.1*map0.5 + 0.9*map0.5:0.95).
-        
-        # Model fitness as a weighted combination of metrics
-        w = [0.0, 0.0, 0.1, 0.9]  # weights for [P, R, mAP@0.5, mAP@0.5:0.95]
-        return (x[:, :4] * w).sum(1)
-
-    @staticmethod
-    def get_vline_pos():
-        return [50]
 
     @staticmethod
     def learning_rates_schedules():
@@ -134,25 +146,89 @@ class YV5_Config:
                 'Finetune' : ['yv5_4', 'yv5_5', 'yv5_6', 'yv5_7']
                 }
 
-class YV5_Train_Data(YV5_Config):
+class YV3_Config(Config):    
+    def __init__(self): pass
+
+    @staticmethod
+    def get_nrows_plot_catloss():
+        return 3
+
+    @staticmethod
+    def get_net_name():
+        return 'yv3'
+        
+    @staticmethod
+    def load_tb_paths():
+        root =  pathlib.Path(__file__).parent
+        make_path_yv3 = lambda exp, date, tb: root / exp / 'YOLOv3_UAVDT_train' / f'{exp}-{date}' / tb
+        #for i in glob.glob("./RedesNeurais/YOLOv3*/YOLOv3_UAVDT_train/*/events*"): print(i.split("/")[-2:], '\n')
+        yv3_tb_paths = {
+            'yv3_0' : make_path_yv3('YOLOv3_UAVDT_0', '28_Feb_2021_04h_35m', 'events.out.tfevents.1614498572.febe.27725.0'),
+            'yv3_1' : make_path_yv3('YOLOv3_UAVDT_1', '28_Feb_2021_04h_36m', 'events.out.tfevents.1614498593.febe.28080.0'),
+            'yv3_2' : make_path_yv3('YOLOv3_UAVDT_2', '28_Feb_2021_04h_36m', 'events.out.tfevents.1614498628.febe.28202.0'),
+            'yv3_3' : make_path_yv3('YOLOv3_UAVDT_3', '01_Mar_2021_11h_34m', 'events.out.tfevents.1614610260.febe.9687.0'),
+            'yv3_4' : make_path_yv3('YOLOv3_UAVDT_4', '01_Mar_2021_11h_34m', 'events.out.tfevents.1614610273.febe.9757.0'),
+            'yv3_5' : make_path_yv3('YOLOv3_UAVDT_5', '01_Mar_2021_11h_35m', 'events.out.tfevents.1614610272.febe.9751.0'),
+            }
+        return yv3_tb_paths
+    
+    @staticmethod
+    def load_cats():
+        return [
+            ('yv3_0', 'yv3_3'),
+            ('yv3_1', 'yv3_4'),
+            ('yv3_2', 'yv3_5'),
+            ]
+
+    @staticmethod
+    def plot_exp_title(name):
+        table = {
+            'yv3_3' : 'yv3_tiny',
+            'yv3_4' : 'yv3',
+            'yv3_5' : 'yv3_spp',
+            }
+        return table[name]
+    
+    @staticmethod
+    def color_cycler(): #cmy#k
+        colors = {
+                'yv3_5' : 'y',
+                'yv3_4' : 'm',
+                'yv3_3' : 'c',
+                'yv3_2' : 'y',
+                'yv3_1' : 'm',
+                'yv3_0' : 'c'
+                }
+        return colors
+
+    @staticmethod
+    def learning_rates_schedules():
+        return {
+                'Scratch' : ['yv3_0', 'yv3_1', 'yv3_2'],
+                'Finetune' : ['yv3_3', 'yv3_4', 'yv3_5']
+                }
+
+class Plot_Train_Data():
     def __init__(self):
-        size_guidance = YV5_Config.load_tb_size_guidance()
-        self.yv5_tb_paths = YV5_Config.load_yv5_tb_paths()
+        size_guidance = self.load_tb_size_guidance()
+        self.tb_paths = self.load_tb_paths()
         
         #Experiment names
-        self.exp = self.yv5_tb_paths.keys()
+        self.exp = self.tb_paths.keys()
         # Individual dataframes for each one experiment
         self.individual_exp_df = {}
-
-        for k,v in self.yv5_tb_paths.items():
+        # Create individual exp dataframes
+        for k,v in self.tb_paths.items():
             self.ea = event_accumulator.EventAccumulator(str(v),
                                                          size_guidance=size_guidance)
             self.ea.Reload()
             self.scalar_tags = self.ea.Tags()['scalars']
             self.individual_exp_df[k] = self._to_dataframe()
-        
+        # Concatenated dataframes for exp sequences
         self._cat_df()
+        # Calc best fitness points
         self.best_fitness_points = self._get_best_fitness_points()
+
 
     def _to_dataframe(self):
         data = {}
@@ -186,9 +262,8 @@ class YV5_Train_Data(YV5_Config):
         return df
     
     def _cat_df(self):
-        cats = YV5_Config.load_cats()
+        cats = self.load_cats()
         self.cats = {}
-
         for nets in cats:
             new = []
             cat = None
@@ -226,7 +301,6 @@ class YV5_Train_Data(YV5_Config):
             for idx in range(len(vlines)-1):
                 best_x = fitness.iloc[ vlines[idx] : vlines[idx+1]].argmax()
                 best_points[exp].append(best_x+vlines[idx])
-        
         return best_points
 
     def get_data_labels(self):
@@ -284,6 +358,10 @@ class YV5_Train_Data(YV5_Config):
                 Plot.plot(x,y,fig,ax[idx],c, self.plot_exp_title(exp))
                 Plot.plot(x,y,fig,axbig,c)
 
+            #Remove axe[3] if the net is equal to yolov3
+            if self.get_net_name() == 'yv3':
+                fig.delaxes(ax[3])
+
             # Adjust ticks and labels in the small frame
             valid_axes = [*ax[:4], axbig]
             Plot.adjust_xticks(valid_axes, steps, self.get_vline_pos(), x)
@@ -301,7 +379,7 @@ class YV5_Train_Data(YV5_Config):
             for idx, axe in enumerate(valid_axes):
                 Plot.set_title(axe, f'({idx+1})')
 
-            output_file_path = Plot.make_output_file_path(metric, self.plot_field_title(metric))
+            output_file_path = Plot.make_output_file_path(metric, self.plot_field_title(metric), net=self.get_net_name())
             if save: plt.savefig(output_file_path)
 
     def _plot_cat_loss(self, save = False, plot_metric = 'train_loss'):
@@ -317,7 +395,7 @@ class YV5_Train_Data(YV5_Config):
         final_title = f'{tipo} {final_title}'
 
         with plt.style.context('bmh'):
-                fig, ax = plt.subplots(4,3, figsize = Plot.properties('figsize_big'),
+                fig, ax = plt.subplots(self.get_nrows_plot_catloss(),3, figsize = Plot.properties('figsize_big'),
                                       constrained_layout=True, sharex=True)
                 ax = ax.flatten()
                 fig2, ax2 = plt.subplots(1,3, figsize=Plot.properties('figsize_medium'),
@@ -373,9 +451,9 @@ class YV5_Train_Data(YV5_Config):
         # Save Figure:
         
         if save: 
-            output_file_path = Plot.make_output_file_path(plot_metric,"" )
+            output_file_path = Plot.make_output_file_path(plot_metric,"", net=self.get_net_name())
             fig.savefig(output_file_path)
-            output_file_path = Plot.make_output_file_path(plot_metric+"_resumed","" )
+            output_file_path = Plot.make_output_file_path(plot_metric+"_resumed","", net=self.get_net_name())
             fig2.savefig(output_file_path)
         
     def plot_cat_trainloss(self, save=False):
@@ -418,9 +496,17 @@ class YV5_Train_Data(YV5_Config):
         Plot.set_xlabel(ax[idx], 'Épocas')
         # Change ticks from index to steps and format
         Plot.adjust_xticks(ax, steps, self.get_vline_pos(), x)
-        output_file_path = Plot.make_output_file_path(metric, self.plot_field_title(metric))
+        output_file_path = Plot.make_output_file_path(metric, self.plot_field_title(metric), net=self.get_net_name())
         if save: plt.savefig(output_file_path)
 
+class Plot_Yv3_Train_Data(Plot_Train_Data, YV3_Config):
+    def __init__(self):
+        super(Plot_Yv3_Train_Data, self).__init__()
+
+class Plot_Yv5_Train_Data(Plot_Train_Data, YV5_Config):
+    def __init__(self):
+        super(Plot_Yv5_Train_Data, self).__init__()
+        
 class Plot:
     def __init__(self): pass
 
@@ -444,7 +530,7 @@ class Plot:
         return d[name]
     
     @staticmethod
-    def make_output_file_path(metric, metric_spec, net='yv5', phase='train'):
+    def make_output_file_path(metric, metric_spec, net="Error", phase='train'):
         """
         metric: train_loss, test_loss, learning_rate, ...
         metric_spec: box loss, object. loss, ...
@@ -456,7 +542,7 @@ class Plot:
         start_time = datetime.datetime.now()
         time_stamp = start_time.strftime("%d_%B_%Y_%Hh_%Mm")
         metric = metric.replace("/", "_")
-        return output_dir / f'{metric}_cat4567_{time_stamp}.pdf'
+        return output_dir / f'{net}_{metric}_cat4567_{time_stamp}.pdf'
     
     @staticmethod
     def adjust_xticks(ax:'list', steps:'new index', vlines_pos, x:'old index'):
@@ -467,7 +553,8 @@ class Plot:
             axe.set_xticks(xticks_pattern)
             for vline in vlines_pos:
                 # Add vlines
-                axe.set_xticks(list(axe.get_xticks()) + [vline])
+                if vline not in axe.get_xticks():
+                    axe.set_xticks(list(axe.get_xticks()) + [vline])
             xticks = axe.get_xticks()
             if 0 not in xticks:
                 axe.set_xticks(list(axe.get_xticks()) + [0])
@@ -488,11 +575,10 @@ class Plot:
         lines_labels = [ax.get_legend_handles_labels() for ax in axes]
         lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
 
-        args = {'prop' : {'size':20}, 'ncol' : 2, 'bbox_to_anchor' : (1.035, 2.3),
+        args = {'prop' : {'size':17}, 'ncol' : 2, 'bbox_to_anchor' : (1.038, 2.25),
                'bbox_transform' : plt.gcf().transFigure}
         if len(kwargs) > 0:
             for k,v in kwargs.items(): args[k] = v
-        
         fig.legend(lines, labels, **args)
     
     @staticmethod
@@ -512,11 +598,17 @@ if __name__ == '__main__':
     #if DEBUG:
     root = pathlib.Path(__file__).parent
     os.chdir(root)
-    a = YV5_Train_Data()
-    a.plot_cat_trainloss(save =         False)
-    a.plot_cat_metrics(save =           False)
-    a.plot_cat_testloss(save =          False)
-    a.plot_cat_learning_rates(save =    False)
+    a = Plot_Yv3_Train_Data()
+    a.plot_cat_trainloss(save =         True)
+    a.plot_cat_metrics(save =           True)
+    a.plot_cat_testloss(save =          True)
+    a.plot_cat_learning_rates(save =    True)
+
+    b = Plot_Yv5_Train_Data()
+    b.plot_cat_trainloss(save =         True)
+    b.plot_cat_metrics(save =           True)
+    b.plot_cat_testloss(save =          True)
+    b.plot_cat_learning_rates(save =    True)
     pass
 
 
