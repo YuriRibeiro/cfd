@@ -16,31 +16,66 @@ Nesta seção são descritos as informações mais relevantes do experimento, co
 | YOLOv5_UAVDT_1   | 50     | COCO (300 Épocas)| YOLOv5 M | 16         | Scratch    |
 | YOLOv5_UAVDT_2   | 50     | COCO (300 Épocas)| YOLOv5 L | 8          | Scratch    |
 | YOLOv5_UAVDT_3   | 50     | COCO (300 Épocas)| YOLOv5 X | 8          | Scratch    |
-| YOLOv5_UAVDT_4   | 50     | YOLOv5_UAVDT_0   | YOLOv5 S | 16         | Finetune   |
+|                  |        |                  |          |            |            |
+| YOLOv5_UAVDT_4   | 50     |    YOLOv5_UAVDT_0| YOLOv5 S | 16         | Finetune   |
 | YOLOv5_UAVDT_5   | 50     | YOLOv5_UAVDT_1   | YOLOv5 M | 16         | Finetune   |
 | YOLOv5_UAVDT_6   | 50     | YOLOv5_UAVDT_2   | YOLOv5 L | 8          | Finetune   |
 | YOLOv5_UAVDT_7   | 50     | YOLOv5_UAVDT_3   | YOLOv5 X | 8          | Finetune   |
-| YOLOv5_UAVDT_301 | 300    | COCO (300 Épocas)| YOLOv5 S | 16         | Finetune   |
-| YOLOv5_UAVDT_302 | 300    | COCO (300 Épocas)| YOLOv5 L | 16         | Finetune   |
+|                  |        |                  |          |            |            |
+| YOLOv5_UAVDT_8   | 50     | YOLOv5_UAVDT_4   | YOLOv5 S | 16         | Finetune   |
+| YOLOv5_UAVDT_9   | 50     | YOLOv5_UAVDT_5   | YOLOv5 M | 16         | Finetune   |
+| YOLOv5_UAVDT_10  | 50     | YOLOv5_UAVDT_6   | YOLOv5 L | 8          | Finetune   |
+| YOLOv5_UAVDT_11  | 50     | YOLOv5_UAVDT_7   | YOLOv5 X | 8          | Finetune   |
+
+
+<br>
+
+
+| Experimento      | Épocas | Pré-Treino       | Modelo     | Batch Size | Hyperparams|
+|------------------|--------|------------------|------------|------------|------------|
+| YOLOv3_UAVDT_0   | 50     | COCO (300 Épocas)| YOLOv3-tiny| 16         | Scratch    |
+| YOLOv3_UAVDT_1   | 50     | COCO (300 Épocas)| YOLOv3     | 16         | Scratch    |
+| YOLOv3_UAVDT_2   | 50     | COCO (300 Épocas)| YOLOv3-spp | 16         | Scratch    |
+|                  |        |                  |            |            |            |
+| YOLOv3_UAVDT_3   | 50     | YOLOv3_UAVDT_0   | YOLOv3-tiny| 16         | Finetune   |
+| YOLOv3_UAVDT_4   | 50     | YOLOv3_UAVDT_1   | YOLOv3     | 16         | Finetune   |
+| YOLOv3_UAVDT_5   | 50     | YOLOv3_UAVDT_2   | YOLOv3-spp | 16         | Finetune   |
+|                  |        |                  |            |            |            |
+| YOLOv3_UAVDT_6   | 50     | YOLOv3_UAVDT_3   | YOLOv3-tiny| 16         | Finetune   |
+| YOLOv3_UAVDT_7   | 50     | YOLOv3_UAVDT_4   | YOLOv3     | 16         | Finetune   |
+| YOLOv3_UAVDT_8   | 50     | YOLOv3_UAVDT_5   | YOLOv3-spp | 16         | Finetune   |
+
 <br>
 
 ## Comentários
 Nesta seção, são expostas as principais características exploradas no treinamento de cada experimento.
 
-
 - Vídeos do Dataset:
   - Conténdo todas as situações (dia, noite, etc.).
 - Pré-processamento das imagens
-  - Zonas de ignore borradas fortemente com filtro gaussiano. YOLOv5_UAVDT_X  (X = 301, 302).
-  - Zonas de ignore substituídas pela cor preta. YOLOv5_UAVDT_X  (X = 0,1,2,...,7).
+  - Zonas de ignore substituídas pela cor preta.
 - Características da rede:
   - Resolução de entrada: 640
   - Otimizador: adam
 
 <br>
 
-## Resultados Detecção e Rastreamento (MOT)
+# Resultados Detecção
 <br>
+ 
+ ## Treinamento
+
+| Experimento      | mAP    | AP@0.5 | AP@0.75 | Curva PR |
+|------------------|--------|--------|---------|----------|
+| YOLOv3_UAVDT_0   |        |        |         |          |
+| YOLOv3_UAVDT_1   |        |        |         |          |
+| YOLOv3_UAVDT_3   |        |        |         |          |
+| YOLOv3_UAVDT_4   |        |        |         |          |
+| YOLOv3_UAVDT_5   |        |        |         |          |
+| YOLOv3_UAVDT_6   |        |        |         |          |
+| YOLOv3_UAVDT_7   |        |        |         |          |
+| YOLOv3_UAVDT_8   |        |        |         |          |
+
 
 | Experimento      | mAP    | AP@0.5 | AP@0.75 | Curva PR |
 |------------------|--------|--------|---------|----------|
@@ -51,12 +86,57 @@ Nesta seção, são expostas as principais características exploradas no treina
 | YOLOv5_UAVDT_5   |        |        |         |          |
 | YOLOv5_UAVDT_6   |        |        |         |          |
 | YOLOv5_UAVDT_7   |        |        |         |          |
-| YOLOv5_UAVDT_301 |        |        |         |          |
-| YOLOv5_UAVDT_302 |        |        |         |          |
-
+| YOLOv5_UAVDT_8   |        |        |         |          |
+| YOLOv5_UAVDT_9   |        |        |         |          |
+| YOLOv5_UAVDT_10  |        |        |         |          |
+| YOLOv5_UAVDT_11  |        |        |         |          |
 <sub>mAP = AP@0.5:0.95</sub>
+
+## UAVDT_Benchmark
+
+| Experimento      | AP_Overall | AP_attributes |
+|------------------|------------|---------------|
+| YOLOv3_UAVDT_0   |            |               |
+| YOLOv3_UAVDT_1   |            |               |
+| YOLOv3_UAVDT_3   |            |               |
+| YOLOv3_UAVDT_4   |            |               |
+| YOLOv3_UAVDT_5   |            |               |
+| YOLOv3_UAVDT_6   |            |               |
+| YOLOv3_UAVDT_7   |            |               |
+| YOLOv3_UAVDT_8   |            |               |
+
+
+| Experimento      | AP_Overall | AP_attributes |
+|------------------|------------|---------------|
+| YOLOv5_UAVDT_0   |            |               |
+| YOLOv5_UAVDT_1   |            |               |
+| YOLOv5_UAVDT_3   |            |               |
+| YOLOv5_UAVDT_4   |            |               |
+| YOLOv5_UAVDT_5   |            |               |
+| YOLOv5_UAVDT_6   |            |               |
+| YOLOv5_UAVDT_7   |            |               |
+| YOLOv5_UAVDT_8   |            |               |
+| YOLOv5_UAVDT_9   |            |               |
+| YOLOv5_UAVDT_10  |            |               |
+| YOLOv5_UAVDT_11  |            |               |
+
+
 <br>
 <br>
+
+## Resultados Rastreamento
+
+| Experimento      | MOTA   | MOTP   | MT      |ML       |FMT      |IDSW     | FP      |TP       |
+|------------------|--------|--------|---------|---------|---------|---------|---------|---------|
+| YOLOv3_UAVDT_0   |        |        |         |         |         |         |         |         |
+| YOLOv3_UAVDT_1   |        |        |         |         |         |         |         |         |
+| YOLOv3_UAVDT_3   |        |        |         |         |         |         |         |         |
+| YOLOv3_UAVDT_4   |        |        |         |         |         |         |         |         |
+| YOLOv3_UAVDT_5   |        |        |         |         |         |         |         |         |
+| YOLOv3_UAVDT_6   |        |        |         |         |         |         |         |         |
+| YOLOv3_UAVDT_7   |        |        |         |         |         |         |         |         |
+| YOLOv3_UAVDT_8   |        |        |         |         |         |         |         |         |
+| YOLOv3_UAVDT_9   |        |        |         |         |         |         |         |         |
 
 
 | Experimento      | MOTA   | MOTP   | MT      |ML       |FMT      |IDSW     | FP      |TP       |
@@ -68,5 +148,8 @@ Nesta seção, são expostas as principais características exploradas no treina
 | YOLOv5_UAVDT_5   |        |        |         |         |         |         |         |         |
 | YOLOv5_UAVDT_6   |        |        |         |         |         |         |         |         |
 | YOLOv5_UAVDT_7   |        |        |         |         |         |         |         |         |
-| YOLOv5_UAVDT_301 |        |        |         |         |         |         |         |         |
-| YOLOv5_UAVDT_302 |        |        |         |         |         |         |         |         |
+| YOLOv5_UAVDT_8   |        |        |         |         |         |         |         |         |
+| YOLOv5_UAVDT_9   |        |        |         |         |         |         |         |         |
+| YOLOv5_UAVDT_10  |        |        |         |         |         |         |         |         |
+| YOLOv5_UAVDT_11  |        |        |         |         |         |         |         |         |
+

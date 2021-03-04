@@ -126,17 +126,19 @@ class YV5_Config(Config):
         return table[name]
     
     @staticmethod
-    def color_cycler():
+    def color_cycler(): 
         colors = {
-                'yv5_7' : '#EE6666',
-                'yv5_6' : '#3388BB',
-                'yv5_5' : '#9988DD',
-                'yv5_4' : '#88BB44',
-                'yv5_3' : '#EE6666',
-                'yv5_2' : '#3388BB',
-                'yv5_1' : '#9988DD',
-                'yv5_0' : '#88BB44'
-                }
+                'yv5_7' : 'orange',# colors = {
+                'yv5_6' : 'b',#         'yv5_7' : '#EE6666',
+                'yv5_5' : 'g',#         'yv5_6' : '#3388BB',
+                'yv5_4' : 'r',#         'yv5_5' : '#9988DD',
+                'yv5_3' : 'orange',#         'yv5_4' : '#88BB44',
+                'yv5_2' : 'b',#         'yv5_3' : '#EE6666',
+                'yv5_1' : 'g',#         'yv5_2' : '#3388BB',
+                'yv5_0' : 'r',#         'yv5_1' : '#9988DD',
+                }                    #         'yv5_0' : '#88BB44'
+                                     #}
+
         return colors
 
     @staticmethod
