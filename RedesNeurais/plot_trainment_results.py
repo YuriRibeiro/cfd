@@ -5,76 +5,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import datetime
+import yegconfigs
 
-"""
-['train/box_loss', 'train/obj_loss', 'train/cls_loss',
- 'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
- 'val/box_loss', 'val/obj_loss', 'val/cls_loss',
- 'x/lr0', 'x/lr1', 'x/lr2']
-"""
 
-# DEBUG:
-DEBUG = False
+# DO NOT PRINT STATUS?
+SILENT = False
 
-class Config:
-    def __init__(self): pass
-    
-    @staticmethod
-    def load_tb_size_guidance():
-        size_guidance = {
-            event_accumulator.COMPRESSED_HISTOGRAMS: 500,
-            event_accumulator.IMAGES: 4,
-            event_accumulator.AUDIO: 4,
-            event_accumulator.SCALARS: 0,
-            event_accumulator.HISTOGRAMS: 1
-            }
-        return size_guidance
+## Override:
+if yegconfigs.SILENT == True: SILENT = True
 
-    @staticmethod
-    def plot_fields():
-        metrics = ['metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95', 'fitness']
-        train_loss = ['train/box_loss', 'train/obj_loss', 'train/cls_loss']
-        test_loss = ['val/box_loss', 'val/obj_loss', 'val/cls_loss']
-        lr = ['x/lr0', 'x/lr1', 'x/lr2']
-        d = {'metrics':metrics, 'train_loss':train_loss, 'test_loss':test_loss, 'lr':lr}
-        return d
-    
-    @staticmethod
-    def plot_field_title(name):
-        table = {
-            'metrics/precision' : 'Precision',
-            'metrics/recall' : 'Recall',
-            'metrics/mAP_0.5' : 'mAP@0.5',
-            'metrics/mAP_0.5:0.95' : 'mAP@0.5:0.95',
-            'train/box_loss' : 'Box Loss',
-            'train/obj_loss': 'Object. Loss',
-            'train/cls_loss' : 'Classif. Loss',
-            'val/box_loss' : 'Box Loss',
-            'val/obj_loss' : 'Object. Loss',
-            'val/cls_loss' : 'Classif. Loss',
-            'x/lr0' : 'LR 0 (Box)',
-            'x/lr1' : 'LR 1 (Object.)',
-            'x/lr2' : 'LR 2 (Classif.)',
-            'fitness' : 'Fitness'
-            }
-        return table[name]
-
-    @staticmethod
-    def fitness(ap_05, map_05_095):
-        # From Submodules/yolov5/train.py.
-        # This is the same fitness function for Submodules/yolov3/train.py.
-        # The fitness function is equivalent to sum(0.1*map0.5 + 0.9*map0.5:0.95).
-        # Ist est, a weighted combination of the AP metrics.
-        #w = [0.0, 0.0, 0.1, 0.9]  # weights for [P, R, mAP@0.5, mAP@0.5:0.95]
-        #return (x[:, :4] * w).sum(1)
-        return 0.1*ap_05 + 0.9*map_05_095
-    
-    @staticmethod
-    def get_vline_pos():
-        # Index of the end of the training sessions == epochs
-        return [50]
-
-class YV5_Config(Config):
+class YV5_Config(yegconfigs.YV5_CONFIGS):
     def __init__(self): pass
 
     @staticmethod
@@ -87,68 +27,10 @@ class YV5_Config(Config):
 
     @staticmethod
     def load_tb_paths():
-        root =  pathlib.Path(__file__).parent
-        make_path_yv5 = lambda exp, date, tb: root / exp / 'YOLOv5_UAVDT_train' / f'{exp}-{date}' / tb
+        return YV5_Config.get_tb_paths()
 
-        yv5_tb_paths = {
-            'yv5_0' : make_path_yv5('YOLOv5_UAVDT_0', '21_Feb_2021_18h_17m', 'events.out.tfevents.1613943087.febe.6899.0'),
-            'yv5_1' : make_path_yv5('YOLOv5_UAVDT_1', '21_Feb_2021_19h_26m', 'events.out.tfevents.1613947244.febe.4710.0'),
-            'yv5_2' : make_path_yv5('YOLOv5_UAVDT_2', '21_Feb_2021_21h_42m', 'events.out.tfevents.1613956332.febe.17826.0'),
-            'yv5_3' : make_path_yv5('YOLOv5_UAVDT_3', '22_Feb_2021_11h_36m', 'events.out.tfevents.1614005399.febe.29767.0'),
-            'yv5_4' : make_path_yv5('YOLOv5_UAVDT_4', '25_Feb_2021_13h_13m', 'events.out.tfevents.1614270487.febe.3970.0'),
-            'yv5_5' : make_path_yv5('YOLOv5_UAVDT_5', '26_Feb_2021_04h_26m', 'events.out.tfevents.1614325214.febe.32724.0'),
-            'yv5_6' : make_path_yv5('YOLOv5_UAVDT_6', '26_Feb_2021_04h_25m', 'events.out.tfevents.1614325182.febe.32230.0'),
-            'yv5_7' : make_path_yv5('YOLOv5_UAVDT_7', '26_Feb_2021_04h_25m', 'events.out.tfevents.1614325148.febe.31738.0')
-            }
-          #'yv5_301' : make_path_yv5('YOLOv5_UAVDT_301', '13_October_2020_14h_48m_24s', 'events.out.tfevents.1602612398.febe.21509.0'),
-          #'yv5_302' : make_path_yv5('YOLOv5_UAVDT_302', '09_October_2020_15h_11m_52s', 'events.out.tfevents.1602268152.febe.16062.0')}
-        return yv5_tb_paths
-    
-    @staticmethod
-    def load_cats():
-        return [
-            ('yv5_0', 'yv5_4'),
-            ('yv5_1', 'yv5_5'),
-            ('yv5_2', 'yv5_6'),
-            ('yv5_3', 'yv5_7')
-            ]
-            #(None, 'yv5_301'),
-            #(None, 'yv5_301')]]
 
-    @staticmethod
-    def plot_exp_title(name):
-        table = {
-            'yv5_4' : 'yv5_S',
-            'yv5_5' : 'yv5_M',
-            'yv5_6' : 'yv5_L',
-            'yv5_7' : 'yv5_X'
-            }
-        return table[name]
-    
-    @staticmethod
-    def color_cycler(): 
-        colors = {
-                'yv5_7' : 'orange',# colors = {
-                'yv5_6' : 'b',#         'yv5_7' : '#EE6666',
-                'yv5_5' : 'g',#         'yv5_6' : '#3388BB',
-                'yv5_4' : 'r',#         'yv5_5' : '#9988DD',
-                'yv5_3' : 'orange',#         'yv5_4' : '#88BB44',
-                'yv5_2' : 'b',#         'yv5_3' : '#EE6666',
-                'yv5_1' : 'g',#         'yv5_2' : '#3388BB',
-                'yv5_0' : 'r',#         'yv5_1' : '#9988DD',
-                }                    #         'yv5_0' : '#88BB44'
-                                     #}
-
-        return colors
-
-    @staticmethod
-    def learning_rates_schedules():
-        return {
-                'Scratch' : ['yv5_0', 'yv5_1', 'yv5_2', 'yv5_3'],
-                'Finetune' : ['yv5_4', 'yv5_5', 'yv5_6', 'yv5_7']
-                }
-
-class YV3_Config(Config):    
+class YV3_Config(yegconfigs.YV3_CONFIGS):    
     def __init__(self): pass
 
     @staticmethod
@@ -161,54 +43,8 @@ class YV3_Config(Config):
         
     @staticmethod
     def load_tb_paths():
-        root =  pathlib.Path(__file__).parent
-        make_path_yv3 = lambda exp, date, tb: root / exp / 'YOLOv3_UAVDT_train' / f'{exp}-{date}' / tb
-        #for i in glob.glob("./RedesNeurais/YOLOv3*/YOLOv3_UAVDT_train/*/events*"): print(i.split("/")[-2:], '\n')
-        yv3_tb_paths = {
-            'yv3_0' : make_path_yv3('YOLOv3_UAVDT_0', '28_Feb_2021_04h_35m', 'events.out.tfevents.1614498572.febe.27725.0'),
-            'yv3_1' : make_path_yv3('YOLOv3_UAVDT_1', '28_Feb_2021_04h_36m', 'events.out.tfevents.1614498593.febe.28080.0'),
-            'yv3_2' : make_path_yv3('YOLOv3_UAVDT_2', '28_Feb_2021_04h_36m', 'events.out.tfevents.1614498628.febe.28202.0'),
-            'yv3_3' : make_path_yv3('YOLOv3_UAVDT_3', '01_Mar_2021_11h_34m', 'events.out.tfevents.1614610260.febe.9687.0'),
-            'yv3_4' : make_path_yv3('YOLOv3_UAVDT_4', '01_Mar_2021_11h_34m', 'events.out.tfevents.1614610273.febe.9757.0'),
-            'yv3_5' : make_path_yv3('YOLOv3_UAVDT_5', '01_Mar_2021_11h_35m', 'events.out.tfevents.1614610272.febe.9751.0'),
-            }
-        return yv3_tb_paths
-    
-    @staticmethod
-    def load_cats():
-        return [
-            ('yv3_0', 'yv3_3'),
-            ('yv3_1', 'yv3_4'),
-            ('yv3_2', 'yv3_5'),
-            ]
+        return YV3_Config.get_tb_paths()
 
-    @staticmethod
-    def plot_exp_title(name):
-        table = {
-            'yv3_3' : 'yv3_tiny',
-            'yv3_4' : 'yv3',
-            'yv3_5' : 'yv3_spp',
-            }
-        return table[name]
-    
-    @staticmethod
-    def color_cycler(): #cmy#k
-        colors = {
-                'yv3_5' : 'y',
-                'yv3_4' : 'm',
-                'yv3_3' : 'c',
-                'yv3_2' : 'y',
-                'yv3_1' : 'm',
-                'yv3_0' : 'c'
-                }
-        return colors
-
-    @staticmethod
-    def learning_rates_schedules():
-        return {
-                'Scratch' : ['yv3_0', 'yv3_1', 'yv3_2'],
-                'Finetune' : ['yv3_3', 'yv3_4', 'yv3_5']
-                }
 
 class Plot_Train_Data():
     def __init__(self):
@@ -329,6 +165,7 @@ class Plot_Train_Data():
     def plot_cat_metrics(self, save = False):
         metrics = self.plot_fields()['metrics']
         experiments = self.get_cat_exps_labels()
+        if not SILENT: print(f"[INFO] Plotando {self.get_net_name()} métricas AP, mAP, ...")
 
         for metric in metrics:
             with plt.style.context('bmh'):
@@ -343,7 +180,7 @@ class Plot_Train_Data():
                 filtered_df = self.cats[exp][metrics]
                 steps = self.cats[exp]['steps']
                 c = self.color_cycler()[exp]
-                x = filtered_df.index
+                x = filtered_df.index + Plot.offset_x()
                 y = filtered_df[metric]
 
                 # Plot best fitness points
@@ -387,7 +224,7 @@ class Plot_Train_Data():
     def _plot_cat_loss(self, save = False, plot_metric = 'train_loss'):
         metrics = self.plot_fields()[plot_metric]
         experiments = self.get_cat_exps_labels()
-
+        
         const = 0
         final_title = ''
         for metric in metrics:
@@ -401,7 +238,7 @@ class Plot_Train_Data():
                                       constrained_layout=True, sharex=True)
                 ax = ax.flatten()
                 fig2, ax2 = plt.subplots(1,3, figsize=Plot.properties('figsize_medium'),
-                                        constrained_layout=True)
+                                        constrained_layout=True, sharex=True)
                 ax2 = ax2.flatten()
         
         for metric in metrics:
@@ -410,7 +247,7 @@ class Plot_Train_Data():
                 filtered_df = self.cats[exp][metrics]
                 steps = self.cats[exp]['steps']
                 c = self.color_cycler()[exp]
-                x = filtered_df.index
+                x = filtered_df.index + Plot.offset_x()
                 y = filtered_df[metric]
 
                 # Plot best fitness points
@@ -459,14 +296,17 @@ class Plot_Train_Data():
             fig2.savefig(output_file_path)
         
     def plot_cat_trainloss(self, save=False):
+        if not SILENT: print(f"[INFO] Plotando {self.get_net_name()} train loss ...")
         self._plot_cat_loss(save=save, plot_metric = 'train_loss')
     
     def plot_cat_testloss(self, save=False):
+        if not SILENT: print(f"[INFO] Plotando {self.get_net_name()} test loss ...")
         self._plot_cat_loss(save=save, plot_metric = 'test_loss')
 
     def plot_cat_learning_rates(self, save = False):
         metrics = self.plot_fields()['lr']
         figsize = Plot.properties('figsize_big')
+        if not SILENT: print(f"[INFO] Plotando {self.get_net_name()} learning rates ...")
         
         final_title = ''
         for metric in metrics:
@@ -483,7 +323,7 @@ class Plot_Train_Data():
                 for idx, metric in enumerate(metrics):
                     steps = self.cats[exp]['steps']
                     c = 'm'
-                    x = filtered_df.index
+                    x = filtered_df.index + Plot.offset_x()
                     y = filtered_df[metric]
                     # Plot vertical lines
                     Plot.plot_vlines(self.get_vline_pos(), ax[idx])
@@ -511,6 +351,11 @@ class Plot_Yv5_Train_Data(Plot_Train_Data, YV5_Config):
         
 class Plot:
     def __init__(self): pass
+
+    @staticmethod
+    def offset_x():
+        offset = 1
+        return offset
 
     @staticmethod
     def plot(x,y,fig=None, ax=None, color=None, leg=None):
@@ -549,7 +394,7 @@ class Plot:
     @staticmethod
     def adjust_xticks(ax:'list', steps:'new index', vlines_pos, x:'old index'):
         # Change ticks from index to steps and format
-        xtick_pattern_step = 10
+        xtick_pattern_step = 25
         xticks_pattern = [i for i in range(0,x.max()+xtick_pattern_step, xtick_pattern_step)]
         for axe in [*ax]:
             axe.set_xticks(xticks_pattern)
@@ -563,8 +408,10 @@ class Plot:
                 xticks = axe.get_xticks()
             xlabels = []
             for val in xticks:
-                if val == 0 or val in vlines_pos:
-                     xlabels.append('0')
+                if val == 0:
+                    xlabels.append('0')
+                elif val in vlines_pos:
+                     xlabels.append('50/ 0')
                 elif val > 0 and val-1 in steps:
                     xlabels.append(str(steps[val-1]+1))
                 else:
@@ -585,7 +432,7 @@ class Plot:
     
     @staticmethod
     def set_xlabel(ax, xlabel):
-        ax.set_xlabel(xlabel, fontsize = 18, fontweight='bold', loc='center')
+        ax.set_xlabel(xlabel, fontsize = 20, fontweight='bold', loc='center')
     @staticmethod
     def set_fig_suptitle(fig, title):
         fig.suptitle(title, fontsize=26)
@@ -597,21 +444,17 @@ class Plot:
         ax.plot(x,y, 'k*', markersize=10)
 
 if __name__ == '__main__':
-    #if DEBUG:
-    root = pathlib.Path(__file__).parent
-    os.chdir(root)
-    a = Plot_Yv3_Train_Data()
-    a.plot_cat_trainloss(save =         True)
-    a.plot_cat_metrics(save =           True)
-    a.plot_cat_testloss(save =          True)
-    a.plot_cat_learning_rates(save =    True)
 
+    save = False
+    #a = Plot_Yv3_Train_Data()
     b = Plot_Yv5_Train_Data()
-    b.plot_cat_trainloss(save =         True)
-    b.plot_cat_metrics(save =           True)
-    b.plot_cat_testloss(save =          True)
-    b.plot_cat_learning_rates(save =    True)
+    #a.plot_cat_trainloss(save =         save)
+    #a.plot_cat_metrics(save =           save)
+    #a.plot_cat_testloss(save =          save)
+    #a.plot_cat_learning_rates(save =    save)
+    b.plot_cat_trainloss(save =         save)
+    b.plot_cat_metrics(save =           save)
+    b.plot_cat_testloss(save =          save)
+    b.plot_cat_learning_rates(save =    save)
     pass
-
-
 # %%

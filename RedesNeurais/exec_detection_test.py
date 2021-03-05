@@ -15,6 +15,7 @@ import subprocess
 import argparse
 import json
 import glob
+import yegconfigs
 
 this_file_dir = os.path.abspath(os.path.dirname(__file__))
 
@@ -33,9 +34,11 @@ class YOLOv5_UAVDT_CONFIG:
                     "YOLOv5_UAVDT_5" : yv5_weigth_path("YOLOv5_UAVDT_5", "26_Feb_2021_04h_26m"),
                     "YOLOv5_UAVDT_6" : yv5_weigth_path("YOLOv5_UAVDT_6", "26_Feb_2021_04h_25m"),
                     "YOLOv5_UAVDT_7" : yv5_weigth_path("YOLOv5_UAVDT_7", "26_Feb_2021_04h_25m"),
-                  "YOLOv5_UAVDT_301" : yv5_weigth_path("YOLOv5_UAVDT_301", "13_October_2020_14h_48m_24s"),
-                  "YOLOv5_UAVDT_302" : yv5_weigth_path("YOLOv5_UAVDT_302", "09_October_2020_15h_11m_52s")}
-            
+                    "YOLOv5_UAVDT_8" : yv5_weigth_path("YOLOv5_UAVDT_8", "03_Mar_2021_03h_52m"),
+                    "YOLOv5_UAVDT_9" : yv5_weigth_path("YOLOv5_UAVDT_9", "03_Mar_2021_03h_53m"),
+                   "YOLOv5_UAVDT_10" : yv5_weigth_path("YOLOv5_UAVDT_10","03_Mar_2021_03h_53m"),
+                   "YOLOv5_UAVDT_11" : yv5_weigth_path("YOLOv5_UAVDT_11","03_Mar_2021_00h_06m"),
+                    }
     
     movies_teste = ["M0203", "M0205", "M0208", "M0209", "M0403", "M0601", \
                     "M0602", "M0606", "M0701", "M0801", "M0802", "M1001", "M1004", \
@@ -232,8 +235,13 @@ class YOLOv3_UAVDT_CONFIG:
                     "YOLOv3_UAVDT_1" : yv3_weigth_path("YOLOv3_UAVDT_1", "28_Feb_2021_04h_36m"),
                     "YOLOv3_UAVDT_2" : yv3_weigth_path("YOLOv3_UAVDT_2", "28_Feb_2021_04h_36m"),
                     "YOLOv3_UAVDT_3" : yv3_weigth_path("YOLOv3_UAVDT_3", "01_Mar_2021_11h_34m"),
-                    "YOLOv3_UAVDT_5" : yv3_weigth_path("YOLOv3_UAVDT_4", "01_Mar_2021_11h_34m"),
-                    "YOLOv3_UAVDT_4" : yv3_weigth_path("YOLOv3_UAVDT_5", "01_Mar_2021_11h_35m")}
+                    "YOLOv3_UAVDT_4" : yv3_weigth_path("YOLOv3_UAVDT_4", "01_Mar_2021_11h_34m"),
+                    "YOLOv3_UAVDT_5" : yv3_weigth_path("YOLOv3_UAVDT_5", "01_Mar_2021_11h_35m"),
+                    "YOLOv3_UAVDT_6" : yv3_weigth_path("YOLOv3_UAVDT_6", "04_Mar_2021_16h_41m"),
+                    "YOLOv3_UAVDT_7" : yv3_weigth_path("YOLOv3_UAVDT_7", "04_Mar_2021_16h_42m"),
+                    "YOLOv3_UAVDT_8" : yv3_weigth_path("YOLOv3_UAVDT_8", "04_Mar_2021_18h_12m"),
+                    }
+
 
     movies_teste = ["M0203", "M0205", "M0208", "M0209", "M0403", "M0601", \
                     "M0602", "M0606", "M0701", "M0801", "M0802", "M1001", "M1004", \
