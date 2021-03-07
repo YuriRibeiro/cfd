@@ -31,3 +31,5 @@
 !**/RedesNeurais/*/hyp.*.yaml
 !**/RedesNeurais/*.py
 **/RedesNeurais/**/*.pdf
+
+Z_TODO.md
