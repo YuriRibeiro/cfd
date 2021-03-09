@@ -4,6 +4,8 @@ import pathlib
 import pandas as pd
 import os
 from scipy.io import loadmat
+import re
+import matplotlib.pyplot as plt
 
 root = yegconfigs.root
 
@@ -95,9 +97,78 @@ class _Benchmark_Utils():
             net_model = net_dataframe.loc[exp_name_abbreviated]['model']
             dic[name] = [exp_name_abbreviated, exp_number, net_model, resolution, ap]
         return pd.DataFrame.from_dict(dic, columns = ['exp_name', 'exp_number', 'model', 'resolution', 'AP_overall'], orient='index')
-
+    
     @staticmethod
-    def _plot_resolution_vs_ap_overall(df):
+    def _gather_speed_vs_resolution_data(det_paths_dict, cfg_df):
+        df = _Benchmark_Utils._get_det_paths_with_resolutions(det_paths_dict)
+        df = pd.concat((df, cfg_df.loc[df.index].model), axis=1) #concat model name
+
+        # Gather speed from speed files.
+        dics = {} #key = resolution, cotents[exp_abbreviated order]
+        p = re.compile('/\d+\\.\d+ ms')
+        for exp_abbr in df.index:
+            temp = {}
+            temp[exp_abbr] = {}
+            for res in df.columns:
+                if res == 'model': continue
+                path = df.loc[exp_abbr, res]
+                with open(path / 'detection_speed.txt', 'r') as f:
+                    l = f.readline()
+                speed = float(p.search(l).group()[1:-3])
+                temp[exp_abbr].update({'model': df.loc[exp_abbr]['model'], res : speed})
+            dics.update(temp)
+        
+        #model-resolution-speed-dataframe
+        mrs_df = pd.DataFrame.from_dict(dics, orient='index')
+        mrs_df.sort_values(by=['model'], inplace=True)
+
+        df_mean = []
+        df_std = []
+        for model in df.model.unique():
+            df_mean.append(mrs_df.loc[mrs_df.model == model].mean())
+            df_std.append(mrs_df.loc[mrs_df.model == model].std())
+        df_mean = pd.concat(df_mean, axis=1)
+        df_mean.columns = df.model.unique()
+        df_std = pd.concat(df_std, axis=1)
+        df_std.columns = df.model.unique()
+        """df_mean:
+                    yv5_S      yv5_M      yv5_L       yv5_X
+        256x256     1.966667   3.166667   7.166667   12.233333
+        384x384     3.000000   6.666667   6.866667   11.566667
+        (....)
+        """
+        return mrs_df, df_mean, df_std
+    
+    @staticmethod
+    def _plot_resolution_vs_speed(det_paths_dict, cfg_df, color_cycler):
+        mrs_df, df_mean, df_std = _Benchmark_Utils._gather_speed_vs_resolution_data(det_paths_dict, cfg_df)
+        models = cfg_df.model.unique()
+
+        with plt.style.context('bmh'):
+            fig, ax = plt.subplots(figsize=(10,5))
+            x = [int(r.split('x')[-1]) for r in df_mean.index]
+            for model in models:
+                y = df_mean[model]
+                err = df_std[model]
+                c = color_cycler[model]
+                ax.plot(x,y,'o-', color=c, label=model)
+                ax.errorbar(x,y,err, color=c, capsize=5)
+            
+            ax.set_xticks(x)
+            ax.set_xlabel('Resolução (pixel)')
+            ax.set_ylabel('Tempo (ms/ img)')
+            ax.set_title('Resolução da Imagem VS Tempo Médio para Detecção')
+            for spine in ax.spines.values():
+                spine.set_visible(False)
+            ax.legend(loc='upper left')
+            
+    @staticmethod
+    def _plot_ap_vs_speed(det_paths_dict, cfg_df):
+        mrs_df, df_mean, df_std = _Benchmark_Utils._gather_speed_vs_resolution_data(det_paths_dict, cfg_df)
+        pass
+        
+    @staticmethod
+    def _plot_resolution_vs_ap_overall(df): #boxplot
         models = df.model.unique()
         resolutions = df.resolution.unique()
         ap = {}
@@ -130,7 +201,13 @@ class YV5_DET(yegconfigs.YV5_CONFIGS, _Benchmark_Utils):
     @staticmethod
     def plot_resolution_vs_ap_overall():
         YV5_DET()._plot_resolution_vs_ap_overall(YV5_DET.get_AP_overall_results())
-
+    
+    @staticmethod
+    def plot_resolution_vs_speed():
+        #YV5_DET()._gather_speed_vs_resolution_data(YV5_DET.get_det_paths(), YV5_DET.get_df())
+        #_plot_ap_vs_speed
+        YV5_DET()._plot_resolution_vs_speed(YV5_DET.get_det_paths(), YV5_DET.get_df(),
+                                            YV5_DET.color_cycler())
 
 
 class YV3_DET(yegconfigs.YV3_CONFIGS, _Benchmark_Utils):
@@ -152,10 +229,13 @@ class YV3_DET(yegconfigs.YV3_CONFIGS, _Benchmark_Utils):
 #YV5_DET().transfer_to_uavdt_bench_folder(only_dataframe=True)
 
 # Gather all AP for overall detections
-a = YV5_DET().get_AP_overall_results()
+#a = YV5_DET().get_AP_overall_results()
 #a.loc[ (a.model=='yv5_S') & (a.resolution == 256)].plot.scatter( )
 #a.plot.scatter(x='resolution', y='AP_overall')
 
+
 #YV5_DET().plot_resolution_vs_ap_overall()
 
+
+#YV5_DET().plot_resolution_vs_speed()
 # %%

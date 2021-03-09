@@ -299,15 +299,18 @@ class _YV3_EXP_CONFIGS():
     @staticmethod
     def color_cycler(): #cmy#k
         colors = {
-                'yv3_8' : 'y',
-                'yv3_7' : 'm',
-                'yv3_6' : 'c',
-                'yv3_5' : 'y',
-                'yv3_4' : 'm',
-                'yv3_3' : 'c',
-                'yv3_2' : 'y',
-                'yv3_1' : 'm',
-                'yv3_0' : 'c'
+                'yv3-spp'  : 'y',
+                'yv3'      : 'm',
+                'yv3_tiny' : 'c',        
+                'yv3_8'    : 'y',
+                'yv3_7'    : 'm',
+                'yv3_6'    : 'c',
+                'yv3_5'    : 'y',
+                'yv3_4'    : 'm',
+                'yv3_3'    : 'c',
+                'yv3_2'    : 'y',
+                'yv3_1'    : 'm',
+                'yv3_0'    : 'c'
                 }
         return colors
 
@@ -355,6 +358,10 @@ class _YV5_EXP_CONFIGS():
     @staticmethod
     def color_cycler(): 
         return  {
+                'yv5_X'  : 'orange',               
+                'yv5_L'  : 'b',
+                'yv5_M'  : 'g',
+                'yv5_S'  : 'r',
                 'yv5_11' : 'orange',               
                 'yv5_10' : 'b',
                 'yv5_9'  : 'g',
