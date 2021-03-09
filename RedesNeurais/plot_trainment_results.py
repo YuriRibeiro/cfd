@@ -28,6 +28,10 @@ class YV5_Config(yegconfigs.YV5_CONFIGS):
     @staticmethod
     def load_tb_paths():
         return YV5_Config.get_tb_paths()
+    
+    @staticmethod
+    def load_net_models():
+        return YV5_Config.get_df().model.unique()
 
 
 class YV3_Config(yegconfigs.YV3_CONFIGS):    
@@ -44,6 +48,11 @@ class YV3_Config(yegconfigs.YV3_CONFIGS):
     @staticmethod
     def load_tb_paths():
         return YV3_Config.get_tb_paths()
+    
+    @staticmethod
+    def load_net_models():
+        return YV3_Config.get_df().model.unique()
+    
 
 
 class Plot_Train_Data():
@@ -124,7 +133,7 @@ class Plot_Train_Data():
     
 
     def _get_best_fitness_points(self):
-        """
+        """yv3_6
         Return: Dict whose keys are the exp_names of cat_exps (self.get_cat_exps_labels())
                 and the values are a list cotaining the best fitness point for each exp_name.
         """
@@ -141,6 +150,101 @@ class Plot_Train_Data():
                 best_points[exp].append(best_x+vlines[idx])
         return best_points
 
+    
+    def _barplot(self, bar_heights, c_cicler, labels, save_path, barWidth=0.35, save=False):
+        
+        # Calc bar positions:
+        M = np.vstack(bar_heights)
+        an_y = M.max(axis=0) # y coord values of the annotations
+        mean = np.mean(M, axis=0)
+        for idx, m in enumerate(mean):
+            M[:, idx] = m
+
+        r1 = np.arange(M.shape[1])
+        ri = [ [x + idx*barWidth for x in r1] for idx in range(0, M.shape[0])]
+        bar_positions = ri
+        
+        # Bar Plot
+        fig, ax = plt.subplots(figsize=Plot.properties('figsize_medium'))
+
+        for barp, barh,exp_label, label in zip(bar_positions, bar_heights, self.get_individual_exps_labels(), labels):
+            ax.bar(barp, barh, width=barWidth, color=c_cicler[exp_label], edgecolor='white', label=label)
+        
+        # Mean line plot
+        r = np.vstack(bar_positions).transpose().flatten()
+        l = M.T.flatten()
+        ax.plot(r, l, 'k--')
+        
+        # Add xticks on the middle of the group bars
+        Plot.set_title(ax, 'Fitness (Best) por Etapa de Treinamento')
+        #ax.set_ylabel('Fitness')
+        x_ticks_labels = [f'Etapa ({idx})' for idx,_ in enumerate(np.mean(M, axis=0))]
+        x_ticks_pos = [r + 1.5*barWidth  for r in range(len(barp))]
+        ax.set_xticks(x_ticks_pos)
+        Plot.set_xticklabels(ax, x_ticks_labels)
+        Plot.set_yticklabels(ax)
+
+        # Annotate mean values
+        an_values = [f'({meanv:.4f})' for idx,meanv in enumerate(np.mean(M, axis=0))]
+
+        for value,x,y in zip(an_values, x_ticks_pos, an_y):
+            ax.annotate(f'{value}',
+                        xy=(x,y),
+                        xytext=(0, 1),  # 3 points vertical offset
+                        textcoords="offset points",
+                        ha='center', va='bottom',
+                        fontsize = 16)
+
+        # Create legend & Show graphic
+        Plot.set_legends(fig, [ax], bbox_to_anchor=(0.9,0.3))
+
+        # SaveFig
+        if save: fig.savefig(save_path)
+    
+    def get_df_best_fitness_points(self, save=False):
+        bestfp = self._get_best_fitness_points()
+        exps_cat = self.get_cat_exps_labels()
+        exps_ind = self.get_individual_exps_labels()
+        cats = self.load_cats()
+
+        dic_fitness = {}
+        df = self.get_df()
+        for exp_cat in exps_cat:
+            for cat in cats:
+                if exp_cat in cat:
+                    for idx, exp in enumerate(cat):
+                        dic_fitness[exp] = [df.loc[exp]['name'],
+                                            f'{df.loc[exp]["model"]} ({idx})',
+                                            self.individual_exp_df[exp]['fitness'].max(), f'{df.loc[exp]["model"]}']
+                continue
+        
+        # Filter DataFrame... (ExpNum, Model, mAP)
+        df = pd.DataFrame.from_dict(dic_fitness, orient='index', columns=['Exp. Name','Model', 'Fitness', 'AuxModel'])
+        print(df)
+
+        # Save to latex
+        path = Plot.make_output_file_path('best_fitness_points', 'table', self.get_net_name(), ext='txt')
+        latex = df.to_latex(index=False, float_format="%.4f", columns=['Exp. Name','Model', 'Fitness'])
+        path = pathlib.Path(yegconfigs.root,'plots',self.get_net_name(),'train')
+        with open(path/'latex_best_fitness_points_table.txt', 'w') as f:
+            f.write(latex)
+
+        # BAR CHART PLOT
+        labels = self.get_cat_exps_labels()
+        labels = [df.loc[exp]['AuxModel'] for exp in labels]
+
+        fitness = lambda x: df.loc[(df.AuxModel == x)]['Fitness'].to_numpy()
+        M = np.vstack([fitness(X) for X in labels])
+        bar_heights = [M[idx,:] for idx in range(M.shape[0])]
+                
+        # Colors
+        c = self.color_cycler()
+
+        # Save path
+        path = Plot.make_output_file_path('best_fitness_points', 'barchart', self.get_net_name())
+        # Make
+        self._barplot(bar_heights, c, labels, save_path=path, barWidth=0.15, save=save)
+        
     def get_data_labels(self):
         return self.ea.Tags()['scalars']
     
@@ -377,7 +481,7 @@ class Plot:
         return d[name]
     
     @staticmethod
-    def make_output_file_path(metric, metric_spec, net="Error", phase='train'):
+    def make_output_file_path(metric, metric_spec, net="Error", phase='train', ext='pdf'):
         """
         metric: train_loss, test_loss, learning_rate, ...
         metric_spec: box loss, object. loss, ...
@@ -389,7 +493,7 @@ class Plot:
         start_time = datetime.datetime.now()
         time_stamp = start_time.strftime("%d_%B_%Y_%Hh_%Mm")
         metric = metric.replace("/", "_")
-        return output_dir / f'{net}_{metric}_cat4567_{time_stamp}.pdf'
+        return output_dir / f'{net}_{metric}_cat150_{time_stamp}.{ext}'
     
     @staticmethod
     def adjust_xticks(ax:'list', steps:'new index', vlines_pos, x:'old index'):
@@ -431,6 +535,14 @@ class Plot:
         fig.legend(lines, labels, **args)
     
     @staticmethod
+    def set_yticklabels(ax):#bar plot
+        for ytick in ax.get_yticklabels():
+            ytick.set_fontsize(14)
+            ytick.set_fontweight('bold')
+    @staticmethod
+    def set_xticklabels(ax, labels):#bar plot
+        ax.set_xticklabels(labels, fontsize = 14, fontweight='bold')
+    @staticmethod
     def set_xlabel(ax, xlabel):
         ax.set_xlabel(xlabel, fontsize = 20, fontweight='bold', loc='center')
     @staticmethod
@@ -442,19 +554,22 @@ class Plot:
     @staticmethod
     def plot_best_fitness_points(ax,x,y):
         ax.plot(x,y, 'k*', markersize=10)
+    
 
 if __name__ == '__main__':
 
     save = False
-    #a = Plot_Yv3_Train_Data()
+    a = Plot_Yv3_Train_Data()
     b = Plot_Yv5_Train_Data()
-    #a.plot_cat_trainloss(save =         save)
-    #a.plot_cat_metrics(save =           save)
-    #a.plot_cat_testloss(save =          save)
-    #a.plot_cat_learning_rates(save =    save)
+    a.plot_cat_trainloss(save =         save)
+    a.plot_cat_metrics(save =           save)
+    a.plot_cat_testloss(save =          save)
+    a.plot_cat_learning_rates(save =    save)
+    a.get_df_best_fitness_points(save = save)
     b.plot_cat_trainloss(save =         save)
     b.plot_cat_metrics(save =           save)
     b.plot_cat_testloss(save =          save)
     b.plot_cat_learning_rates(save =    save)
+    b.get_df_best_fitness_points(save = save)
     pass
 # %%

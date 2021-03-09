@@ -8,83 +8,117 @@ import pathlib
 import pandas as pd
 from tensorboard.backend.event_processing import event_accumulator
 
+root = pathlib.Path(__file__).parent
 SILENT = False # Show status messages while executing plots..
 
 _di5 = {
     'yv5_0' : {'name'   :   'YOLOv5_UAVDT_0',
                'date'   :   '21_Feb_2021_18h_17m',
-               'tb'     :   'events.out.tfevents.1613943087.febe.6899.0'
+               'tb'     :   'events.out.tfevents.1613943087.febe.6899.0',
+               'model'  :   'yv5_S'
             },
     'yv5_1' : {'name'   :   'YOLOv5_UAVDT_1',
                'date'   :   '21_Feb_2021_19h_26m',
-               'tb'     :   'events.out.tfevents.1613947244.febe.4710.0'
+               'tb'     :   'events.out.tfevents.1613947244.febe.4710.0',
+               'model'  :   'yv5_M'
             },
     'yv5_2' : {'name'   :   'YOLOv5_UAVDT_2',
                'date'   :   '21_Feb_2021_21h_42m',
-               'tb'     :   'events.out.tfevents.1613956332.febe.17826.0'
+               'tb'     :   'events.out.tfevents.1613956332.febe.17826.0',
+               'model'  :   'yv5_L'
             },
     'yv5_3' : {'name'   :   'YOLOv5_UAVDT_3',
                'date'   :   '22_Feb_2021_11h_36m',
-               'tb'     :   'events.out.tfevents.1614005399.febe.29767.0'
+               'tb'     :   'events.out.tfevents.1614005399.febe.29767.0',
+               'model'  :   'yv5_X'
             },
     'yv5_4' : {'name'   :   'YOLOv5_UAVDT_4',
                'date'   :   '25_Feb_2021_13h_13m',
-               'tb'     :   'events.out.tfevents.1614270487.febe.3970.0'
+               'tb'     :   'events.out.tfevents.1614270487.febe.3970.0',
+               'model'  :   'yv5_S'
             },
     'yv5_5' : {'name'   :   'YOLOv5_UAVDT_5',
                'date'   :   '26_Feb_2021_04h_26m',
-               'tb'     :   'events.out.tfevents.1614325214.febe.32724.0'
+               'tb'     :   'events.out.tfevents.1614325214.febe.32724.0',
+               'model'  :   'yv5_M'
             },
     'yv5_6' : {'name'   :   'YOLOv5_UAVDT_6',
                'date'   :   '26_Feb_2021_04h_25m',
-               'tb'     :   'events.out.tfevents.1614325182.febe.32230.0'
+               'tb'     :   'events.out.tfevents.1614325182.febe.32230.0',
+               'model'  :   'yv5_L'
             },
     'yv5_7' : {'name'   :   'YOLOv5_UAVDT_7',
                'date'   :   '26_Feb_2021_04h_25m',
-               'tb'     :   'events.out.tfevents.1614325148.febe.31738.0'
+               'tb'     :   'events.out.tfevents.1614325148.febe.31738.0',
+               'model'  :   'yv5_X'
             },
     'yv5_8' : {'name'   :   'YOLOv5_UAVDT_8',
                'date'   :   '03_Mar_2021_03h_52m',
-               'tb'     :   'events.out.tfevents.1614755251.febe.12105.0'
+               'tb'     :   'events.out.tfevents.1614755251.febe.12105.0',
+               'model'  :   'yv5_S'
             },
     'yv5_9' : {'name'   :   'YOLOv5_UAVDT_9',
                'date'   :   '03_Mar_2021_03h_53m',
-               'tb'     :   'events.out.tfevents.1614755289.febe.12519.0'
+               'tb'     :   'events.out.tfevents.1614755289.febe.12519.0',
+               'model'  :   'yv5_M'
             },
     'yv5_10' : {'name'   :  'YOLOv5_UAVDT_10',
                'date'   :   '03_Mar_2021_03h_53m',
-               'tb'     :   'events.out.tfevents.1614755322.febe.12613.0'
+               'tb'     :   'events.out.tfevents.1614755322.febe.12613.0',
+               'model'  :   'yv5_L'
             },
     'yv5_11' : {'name'   :  'YOLOv5_UAVDT_11',
                'date'   :   '03_Mar_2021_00h_06m',
-               'tb'     :   'events.out.tfevents.1614741591.febe.27196.0'
+               'tb'     :   'events.out.tfevents.1614741591.febe.27196.0',
+               'model'  :   'yv5_X'
             }
 }
 
 _di3 = {
     'yv3_0' : {'name'   :   'YOLOv3_UAVDT_0',
                'date'   :   '28_Feb_2021_04h_35m',
-               'tb'     :   'events.out.tfevents.1614498572.febe.27725.0'
+               'tb'     :   'events.out.tfevents.1614498572.febe.27725.0',
+               'model'  :   'yv3_tiny'
             },
     'yv3_1' : {'name'   :   'YOLOv3_UAVDT_1',
                'date'   :   '28_Feb_2021_04h_36m',
-               'tb'     :   'events.out.tfevents.1614498593.febe.28080.0'
+               'tb'     :   'events.out.tfevents.1614498593.febe.28080.0',
+               'model'  :   'yv3'
             },
     'yv3_2' : {'name'   :   'YOLOv3_UAVDT_2',
                'date'   :   '28_Feb_2021_04h_36m',
-               'tb'     :   'events.out.tfevents.1614498628.febe.28202.0'
+               'tb'     :   'events.out.tfevents.1614498628.febe.28202.0',
+               'model'  :   'yv3_spp'
             },
     'yv3_3' : {'name'   :   'YOLOv3_UAVDT_3',
                'date'   :   '01_Mar_2021_11h_34m',
-               'tb'     :   'events.out.tfevents.1614610260.febe.9687.0'
+               'tb'     :   'events.out.tfevents.1614610260.febe.9687.0',
+               'model'  :   'yv3_tiny'
             },
     'yv3_4' : {'name'   :   'YOLOv3_UAVDT_4',
                'date'   :   '01_Mar_2021_11h_34m',
-               'tb'     :   'events.out.tfevents.1614610273.febe.9757.0'
+               'tb'     :   'events.out.tfevents.1614610273.febe.9757.0',
+               'model'  :   'yv3'
             },
     'yv3_5' : {'name'   :   'YOLOv3_UAVDT_5',
                'date'   :   '01_Mar_2021_11h_35m',
-               'tb'     :   'events.out.tfevents.1614610272.febe.9751.0'
+               'tb'     :   'events.out.tfevents.1614610272.febe.9751.0',
+               'model'  :   'yv3_spp'
+            },
+    'yv3_6' : {'name'   :   'YOLOv3_UAVDT_6',
+               'date'   :   '04_Mar_2021_16h_41m',
+               'tb'     :   'events.out.tfevents.1614887743.febe.29787.0',
+               'model'  :   'yv3_tiny'
+            },
+    'yv3_7' : {'name'   :   'YOLOv3_UAVDT_7',
+               'date'   :   '04_Mar_2021_16h_42m',
+               'tb'     :   'events.out.tfevents.1614887743.febe.29790.0',
+               'model'  :   'yv3'
+            },
+    'yv3_8' : {'name'   :   'YOLOv3_UAVDT_8',
+               'date'   :   '04_Mar_2021_18h_12m',
+               'tb'     :   'events.out.tfevents.1614893298.febe.13458.0',
+               'model'  :   'yv3_spp'
             }
 }
 
@@ -242,23 +276,32 @@ class _YV3_EXP_CONFIGS():
     @staticmethod
     def load_cats():
         return [
-            ('yv3_0', 'yv3_3'),
-            ('yv3_1', 'yv3_4'),
-            ('yv3_2', 'yv3_5'),
+            ('yv3_0', 'yv3_3', 'yv3_6'),
+            ('yv3_1', 'yv3_4', 'yv3_7'),
+            ('yv3_2', 'yv3_5', 'yv3_8'),
             ]
 
     @staticmethod
     def plot_exp_title(name):
         table = {
+            'yv3_0' : 'yv3_tiny',
+            'yv3_1' : 'yv3',
+            'yv3_2' : 'yv3_spp',
             'yv3_3' : 'yv3_tiny',
             'yv3_4' : 'yv3',
             'yv3_5' : 'yv3_spp',
+            'yv3_6' : 'yv3_tiny',
+            'yv3_7' : 'yv3',
+            'yv3_8' : 'yv3_spp',
             }
         return table[name]
     
     @staticmethod
     def color_cycler(): #cmy#k
         colors = {
+                'yv3_8' : 'y',
+                'yv3_7' : 'm',
+                'yv3_6' : 'c',
                 'yv3_5' : 'y',
                 'yv3_4' : 'm',
                 'yv3_3' : 'c',
@@ -272,7 +315,7 @@ class _YV3_EXP_CONFIGS():
     def learning_rates_schedules():
         return {
                 'Scratch' : ['yv3_0', 'yv3_1', 'yv3_2'],
-                'Finetune' : ['yv3_3', 'yv3_4', 'yv3_5']
+                'Finetune' : ['yv3_3', 'yv3_4', 'yv3_5', 'yv3_6', 'yv3_7', 'yv3_8']
                 }
 
 class _YV5_PATHS():
