@@ -7,6 +7,8 @@ import os
 import pathlib
 import pandas as pd
 from tensorboard.backend.event_processing import event_accumulator
+import matplotlib.pyplot as plt
+import datetime
 
 root = pathlib.Path(__file__).parent
 SILENT = False # Show status messages while executing plots..
@@ -72,8 +74,28 @@ _di5 = {
                'tb'     :   'events.out.tfevents.1614741591.febe.27196.0',
                'model'  :   'yv5_X'
             }
+    #         },
+    # 'yv5_12' : {'name'   :  'YOLOv5_UAVDT_12',
+    #            'date'   :   '07_Mar_2021_00h_06m',
+    #            'tb'     :   'events.out.tfevents.1615087268.febe.22541.0',
+    #            'model'  :   'yv5_S'
+    #         },
+    # 'yv5_13' : {'name'   :  'YOLOv5_UAVDT_13',
+    #            'date'   :   '07_Mar_2021_00h_07m',
+    #            'tb'     :   'events.out.tfevents.1615087295.febe.22748.0',
+    #            'model'  :   'yv5_M'
+    #         },
+    # 'yv5_14' : {'name'   :  'YOLOv5_UAVDT_14',
+    #            'date'   :   '07_Mar_2021_00h_08m',
+    #            'tb'     :   'events.out.tfevents.1615087417.febe.23319.0',
+    #            'model'  :   'yv5_L'
+    #         },
+    #  'yv5_15' : {'name'   :  'YOLOv5_UAVDT_15',
+    #            'date'   :   '07_Mar_2021_00h_11m',
+    #            'tb'     :   'events.out.tfevents.1615087647.febe.23551.0',
+    #            'model'  :   'yv5_X'
+    #        },
 }
-
 _di3 = {
     'yv3_0' : {'name'   :   'YOLOv3_UAVDT_0',
                'date'   :   '28_Feb_2021_04h_35m',
@@ -344,10 +366,10 @@ class _YV5_EXP_CONFIGS():
     def load_cats():
         # KEEP THE ORDER, yv5_S, yv5_M, yv5_L, yv5_X
         return [
-            ('yv5_0', 'yv5_4', 'yv5_8'),#yv5_S
-            ('yv5_1', 'yv5_5', 'yv5_9'),#yv5_M
-            ('yv5_2', 'yv5_6', 'yv5_10'),#yv5_L
-            ('yv5_3', 'yv5_7', 'yv5_11')#yv5_X
+            ('yv5_0', 'yv5_4', 'yv5_8' ),# 'yv5_12' ),#yv5_S
+            ('yv5_1', 'yv5_5', 'yv5_9' ),# 'yv5_13' ),#yv5_M
+            ('yv5_2', 'yv5_6', 'yv5_10'),# 'yv5_14'),#yv5_L
+            ('yv5_3', 'yv5_7', 'yv5_11'),# 'yv5_15')#yv5_X
             ]
 
     @staticmethod
@@ -362,6 +384,10 @@ class _YV5_EXP_CONFIGS():
                 'yv5_L'  : 'b',
                 'yv5_M'  : 'g',
                 'yv5_S'  : 'r',
+                'yv5_15' : 'orange',               
+                'yv5_14' : 'b',
+                'yv5_13'  : 'g',
+                'yv5_12'  : 'r',
                 'yv5_11' : 'orange',               
                 'yv5_10' : 'b',
                 'yv5_9'  : 'g',
@@ -375,7 +401,8 @@ class _YV5_EXP_CONFIGS():
         return {
                 'Scratch' : ['yv5_0', 'yv5_1', 'yv5_2', 'yv5_3'],
                 'Finetune' : ['yv5_4', 'yv5_5', 'yv5_6', 'yv5_7',
-                              'yv5_8', 'yv5_9', 'yv5_10', 'yv5_11']
+                              'yv5_8', 'yv5_9', 'yv5_10', 'yv5_11'],
+                'Custom1' : ['yv5_12', 'yv5_13', 'yv5_14', 'yv5_15']
                 }
 
 
@@ -384,6 +411,111 @@ class YV5_CONFIGS(_NETsCONFIGS, _YV5_EXP_CONFIGS, _YV5_PATHS):
 
 class YV3_CONFIGS(_NETsCONFIGS, _YV3_EXP_CONFIGS, _YV3_PATHS):
     def __init__(self): pass
+
+
+
+class Plot:
+    def __init__(self): pass
+
+    @staticmethod
+    def offset_x():
+        offset = 1
+        return offset
+
+    @staticmethod
+    def plot(x,y,fig=None, ax=None, color=None, leg=None):
+        l, = ax.plot(x, y, linewidth=1.7, color=color, label=leg)
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+        return fig, ax, l
+    
+    @staticmethod
+    def plot_vlines(vlines_pos :'list', ax):
+        for pos in vlines_pos:
+            ax.axvline(x=pos, color='black', linestyle='--',
+                      linewidth = 0.8,alpha=0.8)                 
+    @staticmethod
+    def properties(name : 'str'):
+        d = {'tick_params' : {'axis':'both', 'which':'major', 'labelsize':15},
+            'figsize_big' : (16, 14),
+            'figsize_medium' : (16, 7) }
+        return d[name]
+    
+    @staticmethod
+    def make_output_file_path(metric, metric_spec, net="Error", phase='train', ext='pdf'):
+        """
+        metric: train_loss, test_loss, learning_rate, ...
+        metric_spec: box loss, object. loss, ...
+        """
+        root = pathlib.Path(__file__).parent
+        output_dir = root /'plots'/ net/ phase
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        start_time = datetime.datetime.now()
+        time_stamp = start_time.strftime("%d_%B_%Y_%Hh_%Mm")
+        metric = metric.replace("/", "_")
+        return output_dir / f'{net}_{metric}_cat150_{time_stamp}.{ext}'
+    
+    @staticmethod
+    def adjust_xticks(ax:'list', steps:'new index', vlines_pos, x:'old index'):
+        # Change ticks from index to steps and format
+        xtick_pattern_step = 25
+        xticks_pattern = [i for i in range(0,x.max()+xtick_pattern_step, xtick_pattern_step)]
+        for axe in [*ax]:
+            axe.set_xticks(xticks_pattern)
+            for vline in vlines_pos:
+                # Add vlines
+                if vline not in axe.get_xticks():
+                    axe.set_xticks(list(axe.get_xticks()) + [vline])
+            xticks = axe.get_xticks()
+            if 0 not in xticks:
+                axe.set_xticks(list(axe.get_xticks()) + [0])
+                xticks = axe.get_xticks()
+            xlabels = []
+            for val in xticks:
+                if val == 0:
+                    xlabels.append('0')
+                elif val in vlines_pos:
+                     xlabels.append('50/ 0')
+                elif val > 0 and val-1 in steps:
+                    xlabels.append(str(steps[val-1]+1))
+                else:
+                    xlabels.append('')
+            axe.set_xticklabels(xlabels)
+            axe.tick_params(**Plot.properties('tick_params'))
+    
+    @staticmethod
+    def set_legends(fig, axes: 'list', **kwargs):
+        lines_labels = [ax.get_legend_handles_labels() for ax in axes]
+        lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+
+        args = {'prop' : {'size':17}, 'ncol' : 2, 'bbox_to_anchor' : (1.038, 2.25),
+               'bbox_transform' : plt.gcf().transFigure}
+        if len(kwargs) > 0:
+            for k,v in kwargs.items(): args[k] = v
+        fig.legend(lines, labels, **args)
+    
+    @staticmethod
+    def set_yticklabels(ax):#bar plot
+        for ytick in ax.get_yticklabels():
+            ytick.set_fontsize(14)
+            ytick.set_fontweight('bold')
+    @staticmethod
+    def set_xticklabels(ax, labels):#bar plot
+        ax.set_xticklabels(labels, fontsize = 14, fontweight='bold')
+    @staticmethod
+    def set_xlabel(ax, xlabel):
+        ax.set_xlabel(xlabel, fontsize = 20, fontweight='bold', loc='center')
+    @staticmethod
+    def set_fig_suptitle(fig, title):
+        fig.suptitle(title, fontsize=26)
+    @staticmethod
+    def set_title(ax, title):
+        ax.set_title(title, fontsize=16, fontweight='bold', loc='left')
+    @staticmethod
+    def plot_best_fitness_points(ax,x,y):
+        ax.plot(x,y, 'k*', markersize=10)
+
 
 
 if __name__ == '__main__':
