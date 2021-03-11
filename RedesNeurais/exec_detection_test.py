@@ -38,6 +38,10 @@ class YOLOv5_UAVDT_CONFIG:
                     "YOLOv5_UAVDT_9" : yv5_weigth_path("YOLOv5_UAVDT_9", "03_Mar_2021_03h_53m"),
                    "YOLOv5_UAVDT_10" : yv5_weigth_path("YOLOv5_UAVDT_10","03_Mar_2021_03h_53m"),
                    "YOLOv5_UAVDT_11" : yv5_weigth_path("YOLOv5_UAVDT_11","03_Mar_2021_00h_06m"),
+                   "YOLOv5_UAVDT_12" : yv5_weigth_path("YOLOv5_UAVDT_12","07_Mar_2021_00h_06m"),
+                   "YOLOv5_UAVDT_13" : yv5_weigth_path("YOLOv5_UAVDT_13","07_Mar_2021_00h_07m"),
+                   "YOLOv5_UAVDT_14" : yv5_weigth_path("YOLOv5_UAVDT_14","07_Mar_2021_00h_08m"),
+                   "YOLOv5_UAVDT_15" : yv5_weigth_path("YOLOv5_UAVDT_15","07_Mar_2021_00h_11m"),
                     }
     
     movies_teste = ["M0203", "M0205", "M0208", "M0209", "M0403", "M0601", \
@@ -240,6 +244,9 @@ class YOLOv3_UAVDT_CONFIG:
                     "YOLOv3_UAVDT_6" : yv3_weigth_path("YOLOv3_UAVDT_6", "04_Mar_2021_16h_41m"),
                     "YOLOv3_UAVDT_7" : yv3_weigth_path("YOLOv3_UAVDT_7", "04_Mar_2021_16h_42m"),
                     "YOLOv3_UAVDT_8" : yv3_weigth_path("YOLOv3_UAVDT_8", "04_Mar_2021_18h_12m"),
+                    "YOLOv3_UAVDT_9" : yv3_weigth_path("YOLOv3_UAVDT_9", "09_Mar_2021_02h_11m"),
+                    "YOLOv3_UAVDT_10": yv3_weigth_path("YOLOv3_UAVDT_10","09_Mar_2021_02h_11m"),
+                    "YOLOv3_UAVDT_11": yv3_weigth_path("YOLOv3_UAVDT_11","09_Mar_2021_02h_12m"),
                     }
 
 
