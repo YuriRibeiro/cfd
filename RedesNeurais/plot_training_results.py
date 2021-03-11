@@ -164,38 +164,42 @@ class Plot_Train_Data():
         bar_positions = ri
         
         # Bar Plot
-        fig, ax = plt.subplots(figsize=Plot.properties('figsize_medium'))
+        with plt.style.context('bmh'):
+            fig, ax = plt.subplots(figsize=Plot.properties('figsize_medium'))
 
-        for barp, barh,exp_label, label in zip(bar_positions, bar_heights, self.get_individual_exps_labels(), labels):
-            ax.bar(barp, barh, width=barWidth, color=c_cicler[exp_label], edgecolor='white', label=label)
-        
-        # Mean line plot
-        r = np.vstack(bar_positions).transpose().flatten()
-        l = M.T.flatten()
-        ax.plot(r, l, 'k--')
-        
-        # Add xticks on the middle of the group bars
-        Plot.set_title(ax, 'Fitness (Best) por Etapa de Treinamento')
-        #ax.set_ylabel('Fitness')
-        x_ticks_labels = [f'Etapa ({idx})' for idx,_ in enumerate(np.mean(M, axis=0))]
-        x_ticks_pos = [r + 1.5*barWidth  for r in range(len(barp))]
-        ax.set_xticks(x_ticks_pos)
-        Plot.set_xticklabels(ax, x_ticks_labels)
-        Plot.set_yticklabels(ax)
+            for barp, barh,exp_label, label in zip(bar_positions, bar_heights, self.get_individual_exps_labels(), labels):
+                ax.bar(barp, barh, width=barWidth, color=c_cicler[exp_label], edgecolor='white', label=label)
+            
+            # Mean line plot
+            r = np.vstack(bar_positions).transpose().flatten()
+            l = M.T.flatten()
+            ax.plot(r, l, 'k--')
+            
+            # Add xticks on the middle of the group bars
+            Plot.set_title(ax, 'Fitness (Best) por Etapa de Treinamento')
+            #ax.set_ylabel('Fitness')
+            x_ticks_labels = [f'Etapa ({idx})' for idx,_ in enumerate(np.mean(M, axis=0))]
+            x_ticks_pos = [r + 1.5*barWidth  for r in range(len(barp))]
+            ax.set_xticks(x_ticks_pos)
+            Plot.set_xticklabels(ax, x_ticks_labels)
+            Plot.set_yticklabels(ax)
+            ax.grid(False)
+            for spine in ax.spines.values():
+                spine.set_visible(False)
 
-        # Annotate mean values
-        an_values = [f'({meanv:.4f})' for idx,meanv in enumerate(np.mean(M, axis=0))]
+            # Annotate mean values
+            an_values = [f'({meanv:.4f})' for idx,meanv in enumerate(np.mean(M, axis=0))]
 
-        for value,x,y in zip(an_values, x_ticks_pos, an_y):
-            ax.annotate(f'{value}',
-                        xy=(x,y),
-                        xytext=(0, 1),  # 3 points vertical offset
-                        textcoords="offset points",
-                        ha='center', va='bottom',
-                        fontsize = 16)
+            for value,x,y in zip(an_values, x_ticks_pos, an_y):
+                ax.annotate(f'{value}',
+                            xy=(x,y),
+                            xytext=(0, 1),  # 3 points vertical offset
+                            textcoords="offset points",
+                            ha='center', va='bottom',
+                            fontsize = 16)
 
-        # Create legend & Show graphic
-        Plot.set_legends(fig, [ax], bbox_to_anchor=(0.9,0.3))
+            # Create legend & Show graphic
+            Plot.set_legends(fig, [ax], bbox_to_anchor=(0.9,0.3))
 
         # SaveFig
         if save: fig.savefig(save_path)
@@ -224,7 +228,7 @@ class Plot_Train_Data():
         latex = df.to_latex(index=False, float_format="%.4f", columns=['Model', 'Fitness'])
         if save:
             path = Plot.make_output_file_path('best_fitness_points', 'table', self.get_net_name(), ext='txt')
-            with open(path/'latex_best_fitness_points_table.txt', 'w') as f:
+            with open(path, 'w') as f:
                 f.write(latex)
 
         # BAR CHART PLOT

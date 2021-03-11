@@ -12,14 +12,17 @@ root = yegconfigs.root
 
 
 class _Benchmark_Utils():  
-    def __init__(self):
+    def __init__(self, auto_calc=True):
         self.baseline_models = ['det_RON', 'det_SSD', 'det_FRCNN', 'det_RFCN']
+        self.baseline_speeds_fps = [11.11, 41.55, 2.75, 4.65] #gpu speeds..
+        self.cut_seq_obj_classes = ['truck', 'bus', 'lagre-occ', 'medium-occ', 'small-occ', 'medium-out', 'small-out', 'long']
         self.dest_uavdt = root.parent/'Datasets'/'UAVDT'/'UAV-benchmark-MOTD_v1.0'/'RES_DET'
         self.deteva_uavdt_fopath = root.parent/'Datasets'/'UAVDT'/'UAV-benchmark-MOTD_v1.0'/'det_EVA'
-
-        self.ap_overall_data = self._gather_AP_overall_data()
         self.det_paths_with_resolutions = self._get_det_paths_with_resolutions()
-        self.speed_vs_resolution_df = self._gather_speed_vs_resolution_data()
+
+        if auto_calc:
+            self.ap_overall_data = self._gather_AP_overall_data()
+            self.speed_vs_resolution_df = self._gather_speed_vs_resolution_data()
         
     def _get_det_paths_with_resolutions(self):
         """
@@ -75,7 +78,8 @@ class _Benchmark_Utils():
     
     def _gather_AP_overall_data(self):
         deteva_uavdt_fopath = self.deteva_uavdt_fopath
-        deteva_apoverall_files = deteva_uavdt_fopath.glob('*_overall.mat')
+        net = self.get_df().name[0][:6]
+        deteva_apoverall_files = deteva_uavdt_fopath.glob(f'{net}_*_overall.mat')
         dic = {}
         baseline_models = self.baseline_models
         for file_path in deteva_apoverall_files:
@@ -137,7 +141,7 @@ class _Benchmark_Utils():
         """
         return mrs_df, df_mean, df_std
     
-    def _plot_resolution_vs_speed(self):
+    def _plot_resolution_vs_speed(self, save=False):
         mrs_df, df_mean, df_std = self.speed_vs_resolution_df
         color_cycler = self.color_cycler
         cfg_df = self.net_dataframe
@@ -145,7 +149,7 @@ class _Benchmark_Utils():
         models = cfg_df.model.unique()
 
         with plt.style.context('bmh'):
-            fig, ax = plt.subplots(figsize=(10,5))
+            fig, ax = plt.subplots(figsize=(10,4), constrained_layout=True)
             x = [int(r.split('x')[-1]) for r in df_mean.index]
             for model in models:
                 y = df_mean[model]
@@ -158,9 +162,9 @@ class _Benchmark_Utils():
             # ax.set_yticks(np.concatenate([ax.get_yticks(), [33.3]]))
             ax.set_ylim([0, ax.get_yticks().max()])
             ax.set_xticks(x)
-            ax.set_xlabel('Resolução (pixel)')
-            ax.set_ylabel('Tempo (ms/ img)')
-            ax.set_title('Resolução da Imagem VS Tempo Médio para Detecção')
+            Plot.set_xlabel(ax, 'Resolução (pixel)', fontsize=14)
+            Plot.set_ylabel(ax, 'Tempo (ms/ img)', fontsize=14)
+            Plot.set_title(ax, 'Tempo Médio para Detecção VS Resolução da Imagem')
             # ax.annotate(f'(30 FPS)',
             #             xy=(384,33),
             #             xytext=(0, 1),  # 3 points vertical offset
@@ -169,13 +173,14 @@ class _Benchmark_Utils():
             #             fontsize = 16)
             for spine in ax.spines.values():
                 spine.set_visible(False)
-            ax.legend(loc='upper left')
-            
-    def _plot_ap_vs_speed(self):
-        #mrs_df, df_mean, df_std = self.speed_vs_resolution_df
-        pass
+            ax.legend(loc='upper left', fontsize=14)
         
-    def _plot_resolution_vs_ap_overall(self):
+        if save:
+            net_name = model[:3]
+            path = Plot.make_output_file_path('res_vs_mean_speed_vs_ap', net=net_name, phase='test')
+            fig.savefig(path)
+                   
+    def _future_plot_resolution_vs_ap_overall(self):
         df = self.ap_overall_data
         models = df.model.unique()
         resolutions = df.resolution.unique()
@@ -188,7 +193,7 @@ class _Benchmark_Utils():
             ap[model] = res_data
         pass
 
-    def _table_resolution_vs_ap_overall(self):
+    def _table_resolution_vs_ap_overall(self, save=False):
         df = self.ap_overall_data
         ordered_list_of_models = self.get_models()
         models = np.array(ordered_list_of_models)
@@ -219,9 +224,16 @@ class _Benchmark_Utils():
             max_cols.append(f'{max_ap} ({col})')
         max_cols = pd.DataFrame(max_cols, index=dft.index, columns=['Max_AP_(Resolution)'])
         dft = pd.concat([dft, max_cols], axis=1)
+
+        if save:
+            net = model[:3]
+            latex = dft.to_latex(index=True, float_format="%.2f")
+            path = Plot.make_output_file_path('table_all_res_vs_ap_overall', net=net, ext='txt', phase='test')
+            with open(path, 'w') as f:
+                f.write(latex)
         return dft
     
-    def _select_best_ap_overall_models(self, export_to_matlab):
+    def _select_best_ap_overall_models(self, export_to_matlab=False):
         bapoall = self.table_apoall_vs_resolution
         apoall = self.ap_overall_data
         nmodels = len(self.get_models())
@@ -256,15 +268,178 @@ class _Benchmark_Utils():
 
         return best_ap_exp_names
 
+    def _plot_ap_vs_speed_best_models(self, save=False):
+        #mrs_df, df_mean, df_std = self.speed_vs_resolution_df
+        bap_exp_names = self.select_best_ap_overall_models(export_to_matlab = False)
+        df = self.ap_overall_data.loc[bap_exp_names][['model', 'resolution', 'AP_overall']]
+        _,mean_speed_vs_res,_ = self._gather_speed_vs_resolution_data()
+        models = [] #'yv5_S', ...
+        model_resolution = [] #('model (resolution)')
+        x = [] # x in (ms/img)
+        y = [] # y in (AP
+        for model, res, ap in df.values:
+            res = f'{res}x{res}'
+            models.append(model)
+            model_resolution.append(f'{model} ({res})')
+            x.append(mean_speed_vs_res.loc[res, model])
+            y.append(ap)
+        # PLOT
+        net_name = self.get_df().name[0][:6]
+        with plt.style.context('bmh'):
+            fig, ax = plt.subplots(figsize = (10,4), constrained_layout=True)
+            for mi, mri, xi, yi in zip(models, model_resolution, x, y):
+                c = self.color_cycler()[mi]
+                ax.plot(xi, yi, '*', color=c, markersize = 18, label = mri)
+            Plot.set_title(ax,f'Modelos Selecionados ({net_name}): AP VS Velocidade de Detecção')
+            Plot.set_xlabel(ax, 'Velocidade (ms/ img)', fontsize=14)
+            Plot.set_ylabel(ax, 'AP', fontsize = 14)
+            ax.legend(loc='upper left',fontsize=12)
+            for spine in ax.spines.values():
+                spine.set_visible(False)
 
+        if save:
+            net_name = model[:3]
+            path = Plot.make_output_file_path('best_models_speed_vs_ap', net=net_name, phase='test')
+            fig.savefig(path)
 
+    def _plot_pr_curve_best_models(self, save=False):
+        deteva_uavdt_fopath = self.deteva_uavdt_fopath
+        bestmodels = self._select_best_ap_overall_models(export_to_matlab=False)
+        baseline_models = self.baseline_models
+        baseline_speeds_fps = self.baseline_speeds_fps
+        deteva_paths = [deteva_uavdt_fopath / f'{p}_overall.mat' for p in bestmodels + baseline_models]
+        dic = {}
+        _,mean_speed_vs_res,_ = self._gather_speed_vs_resolution_data()
+        for file_path in deteva_paths:
+            content = loadmat(file_path, squeeze_me=True)['attribute']
+            name = content['name'].item()
+            prec = content['prec'].item()
+            rec = content['rec'].item()
+            ap = content['AP'].item()
+            # pick model name if it is not a baseline model
+            if not name in baseline_models:
+                this_net_name = name.split('-')[0]
+                for exp_name_abbreviated in self.net_dataframe.index:
+                    series_name = self.net_dataframe['name'].loc[exp_name_abbreviated]
+                    if this_net_name == series_name: break
+                res = name.split('-')[-1]
+                model = self.net_dataframe.loc[exp_name_abbreviated]['model']
+            else:
+                model = name
+                res = 'N/A'
+                exp_name_abbreviated = name
+            if name in baseline_models:
+                speed = baseline_speeds_fps[baseline_models.index(name)]
+            else:
+                speed = 1000/(mean_speed_vs_res.loc[res, model])#fps
+            dic[name] = [exp_name_abbreviated, model, res, ap, speed, prec, rec]
+        # Plot
+        with plt.style.context('bmh'):
+            fig, ax = plt.subplots(figsize=(10,4), constrained_layout=True)
+            for k,(exp_name_wn, model, res, ap, fps, p, r) in dic.items(): #wn = with number
+                x = r
+                y = p
+                if not model in baseline_models:
+                    c = self.color_cycler()[model]
+                else:
+                    c = yegconfigs.BaselineModels.color_cycler()[model]
+                ax.plot(x, y, color=c, label=f'{model} ({ap:.2f}%, {fps:.2f})')
+                
+            net_name = bestmodels[0][:6]
+            Plot.set_title(ax,f'Precision VS Recall -- Modelos {net_name} e de Referência')
+            Plot.set_xlabel(ax, 'Recall', fontsize=14)
+            Plot.set_ylabel(ax, 'Precision', fontsize = 14)
+            ax.legend(loc='lower left', fontsize=12, ncol=2)
+            for spine in ax.spines.values():
+                spine.set_visible(False)
+
+        if save:
+            net_name = self.get_models()[0][:3]
+            path = Plot.make_output_file_path('best_models_precision_vs_recall', net=net_name, phase='test')
+            fig.savefig(path)
+        return 
+
+    def _plot_barchart_seq_obj(self, save=False):
+        deteva_uavdt_fopath = self.deteva_uavdt_fopath
+        bestmodels = self._select_best_ap_overall_models(export_to_matlab=False)
+        df = self.get_df()
+        bestmodels_abn = [df[df.name == pt.split('-')[0]].index[0] for pt in bestmodels]
+        baseline_models = self.baseline_models
+        seq_paths = [deteva_uavdt_fopath / f'{p}_seq.mat' for p in bestmodels + baseline_models]
+        obj1_paths = [deteva_uavdt_fopath / f'{p}_obj_1.mat' for p in bestmodels + baseline_models]
+        obj2_paths = [deteva_uavdt_fopath / f'{p}_obj_2.mat' for p in bestmodels + baseline_models]
+        obj3_paths = [deteva_uavdt_fopath / f'{p}_obj_3.mat' for p in bestmodels + baseline_models]
+        cut = self.cut_seq_obj_classes
+        dic = {}
+        total_paths = [seq_paths, obj1_paths, obj2_paths, obj3_paths]
+        for path in total_paths:
+            for file_path, model_abb in zip(path, bestmodels_abn + baseline_models):
+                content = loadmat(file_path, squeeze_me=True)['attribute']
+                names = content['name'].item()
+                aps = content['AP'].item()
+                if not model_abb in baseline_models: model_abb = df.model.loc[model_abb]
+                if not model_abb in dic: dic[model_abb] = {}
+                dic[model_abb].update({k:v for k,v in zip(names, aps) if k not in cut})
+        
+        # BAR CHART PLOT
+        legends = dic.keys()
+        labels = dic[model_abb].keys()
+        
+        #heights
+        values = [list(dic[di].values()) for di in legends]
+        M = np.vstack(values)
+        bar_heights = [M[idx, :] for idx in range(M.shape[0])]
+                
+        # Colors
+        c = {**self.color_cycler(), **yegconfigs.BaselineModels.color_cycler()} 
+
+        # Save path
+        net_name = df.model.iloc[0][:3]
+        path = Plot.make_output_file_path('bar_chart_seq_obj_bench', net=net_name,  phase='test')
+        # Make
+        self._barplot(M, bar_heights, c, labels, legends=legends, save_path=path,  save=save)
+        
+    def _barplot(self, M, bar_heights, c_cicler, labels, save_path, legends='', barWidth=0.3, step=3, save=False):
+        # Calc bar positions:
+        step = step
+        if M.shape[1]*barWidth <= step: print("Warning! Barras Sobrepostas. (barWidth*(#barras_no_grupo) >= step).")
+        r1 = np.arange(0, step*M.shape[1], step)
+        bar_positions = [[x + idx*barWidth for x in r1] for idx in range(0, M.shape[0])]
+        
+        # Bar Plot
+        with plt.style.context('bmh'):
+            fig, ax = plt.subplots(figsize=(12,6), constrained_layout=True)
+            for barp, barh, exp_name in zip(bar_positions, bar_heights, legends):
+                barh[np.where(barh < 0.5)] = 0.5 # Expand low values to be visible in the plot.
+                ax.bar(barp, barh, width=barWidth, color=c_cicler[exp_name], edgecolor='white', label=exp_name)
+                        
+            # Add xticks on the middle of the group bars
+            x_ticks_labels = [f'{name}' for name in labels]
+            x_ticks_pos = [step*r + 0.5*len(legends)*barWidth  for r in range(len(barp))]
+            
+            ax.grid(False)
+            ax.set_xticks(x_ticks_pos)
+            Plot.set_ylabel(ax, 'AP', fontsize=14)
+            Plot.set_title(ax, 'AP por Atributo das Sequências de Vídeo')
+            Plot.set_xticklabels(ax, x_ticks_labels, rotation=60)
+            Plot.set_yticklabels(ax,)
+            fig.legend(loc='upper right', ncol=2, fontsize=14)
+            #Plot.set_legends(fig, [ax], bbox_to_anchor=(1,1))
+
+            for spine in ax.spines.values():
+                spine.set_visible(False)
+
+        # SaveFig
+        if save: fig.savefig(save_path)
+
+#AutoCalc Should be set off, if you want to link det files to uavdt
 class Plot_YV5_DET_Bench(_Benchmark_Utils, yegconfigs.YV5_CONFIGS):
-    def __init__(self):
+    def __init__(self, auto_calc=True):
         self.det_paths_dict = self.get_det_paths() #yegconfigs.YV5_CONFIGS
         self.net_dataframe = self.get_df()
-        super(Plot_YV5_DET_Bench, self).__init__()
-        self.table_apoall_vs_resolution = self._table_resolution_vs_ap_overall()
-        
+        super(Plot_YV5_DET_Bench, self).__init__(auto_calc=auto_calc)
+        if auto_calc:
+            self.table_apoall_vs_resolution = self.table_resolution_vs_ap_overall()
 
     def transfer_to_uavdt_bench_folder(self, only_dataframe=False):
         return self._symlinks_det_folder_to_uavdt(only_dataframe=only_dataframe)
@@ -272,39 +447,102 @@ class Plot_YV5_DET_Bench(_Benchmark_Utils, yegconfigs.YV5_CONFIGS):
     def get_AP_overall_results(self):
         return self._gather_AP_overall_data()
     
-    def plot_resolution_vs_ap_overall(self):
-        return self._plot_resolution_vs_ap_overall()
+    def future_plot_resolution_vs_ap_overall(self):
+        return self.future_plot_resolution_vs_ap_overall()
     
-    def table_resolution_vs_ap_overall(self):
-        return self.table_apoall_vs_resolution
+    def table_resolution_vs_ap_overall(self, save=False):
+        return self._table_resolution_vs_ap_overall(save)
     
-    def plot_resolution_vs_speed(self):
-        return self._plot_resolution_vs_speed()
+    def plot_resolution_vs_speed(self, save=False):
+        return self._plot_resolution_vs_speed(save)
     
     def select_best_ap_overall_models(self, export_to_matlab=True):
         return self._select_best_ap_overall_models(export_to_matlab)
+    
+    def plot_ap_vs_speed_best_models(self, save=False):
+        return self._plot_ap_vs_speed_best_models(save)
+    
+    def plot_pr_curve_best_models(self, save=False):
+        return self._plot_pr_curve_best_models(save)
+    
+    def plot_barchart_seq_obj(self, save):
+        return self._plot_barchart_seq_obj(save)
 
-# Plot class
+
+class Plot_YV3_DET_Bench(_Benchmark_Utils, yegconfigs.YV3_CONFIGS):
+    def __init__(self, auto_calc=True):
+        self.det_paths_dict = self.get_det_paths() #yegconfigs.YV3_CONFIGS
+        self.net_dataframe = self.get_df()
+        super(Plot_YV3_DET_Bench, self).__init__(auto_calc=auto_calc)
+        if auto_calc:
+            self.table_apoall_vs_resolution = self.table_resolution_vs_ap_overall()
+
+    def transfer_to_uavdt_bench_folder(self, only_dataframe=False):
+        return self._symlinks_det_folder_to_uavdt(only_dataframe=only_dataframe)
+    
+    def get_AP_overall_results(self):
+        return self._gather_AP_overall_data()
+    
+    def future_plot_resolution_vs_ap_overall(self):
+        return self.future_plot_resolution_vs_ap_overall()
+    
+    def table_resolution_vs_ap_overall(self, save=False):
+        return self._table_resolution_vs_ap_overall(save)
+    
+    def plot_resolution_vs_speed(self, save=False):
+        return self._plot_resolution_vs_speed(save)
+    
+    def select_best_ap_overall_models(self, export_to_matlab=True):
+        return self._select_best_ap_overall_models(export_to_matlab)
+    
+    def plot_ap_vs_speed_best_models(self, save=False):
+        return self._plot_ap_vs_speed_best_models(save)
+    
+    def plot_pr_curve_best_models(self, save=False):
+        return self._plot_pr_curve_best_models(save)
+    
+    def plot_barchart_seq_obj(self, save):
+        return self._plot_barchart_seq_obj(save)
+
+# Plot Class from yegconfigs
 Plot = yegconfigs.Plot
 
-# Init
-a = Plot_YV5_DET_Bench()
-a.select_best_ap_overall_models()
 
-## Symlink det files to uavdt benchmark RES_DET folder and a df with orig/dest files
-#df_1 = a.transfer_to_uavdt_bench_folder(only_dataframe=True)
+if __name__ == '__main__':
 
-#Gather all AP results for overall detections
-##df_2 = a.get_AP_overall_results()
+    # Init
+    SAVE = False
+    auto_calc=True #False only for the first run
 
-## Plot mean resolutions vs speed
-#a.plot_resolution_vs_speed()
+    a = Plot_YV5_DET_Bench(auto_calc=auto_calc)
+    #a = Plot_YV3_DET_Bench(auto_calc=auto_calc)
+    
+    ## Symlink det files to uavdt benchmark RES_DET folder and a df with orig/dest files
+    #df_1 = a.transfer_to_uavdt_bench_folder(only_dataframe=False)
 
-## Plot resolution vs ap_overall
-#a.plot_resolution_vs_ap_overall()
+    ##Gather all AP results for overall detections
+    #df_2 = a.get_AP_overall_results()
 
-## Make Latex Table resolution vs ap_overall
-#a.table_resolution_vs_ap_overall()
+    ## (Future) Plot resolution vs ap_overall
+    #a.future_plot_resolution_vs_ap_overall()
 
-pass
+    ## Selectbest ap exp for each model
+    #a.select_best_ap_overall_models(export_to_matlab=False)
+
+    ## Make Latex Table resolution vs ap_overall
+    a.table_resolution_vs_ap_overall(save = SAVE)
+
+    ## Plot mean resolutions vs speed
+    a.plot_resolution_vs_speed(save = SAVE)
+
+    # Plot AP vs Speed for the best models()
+    a.plot_ap_vs_speed_best_models(save= SAVE)
+
+    ## Plot PR Curve for the best and baseline models
+    a.plot_pr_curve_best_models(save= SAVE)
+
+    ## Plot seq and obj det scores:
+    a.plot_barchart_seq_obj(save= SAVE)
+
+    pass
 # %%

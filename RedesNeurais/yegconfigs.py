@@ -294,6 +294,9 @@ class _YV3_PATHS():
 
 class _YV3_EXP_CONFIGS():
     def __init__(self): pass
+    @staticmethod
+    def get_models():
+        return ['yv3_tiny', 'yv3', 'yv3_spp']
 
     @staticmethod
     def load_cats():
@@ -321,7 +324,7 @@ class _YV3_EXP_CONFIGS():
     @staticmethod
     def color_cycler(): #cmy#k
         colors = {
-                'yv3-spp'  : 'y',
+                'yv3_spp'  : 'y',
                 'yv3'      : 'm',
                 'yv3_tiny' : 'c',        
                 'yv3_8'    : 'y',
@@ -438,11 +441,14 @@ class Plot:
     def properties(name : 'str'):
         d = {'tick_params' : {'axis':'both', 'which':'major', 'labelsize':15},
             'figsize_big' : (16, 14),
-            'figsize_medium' : (16, 7) }
+            'figsize_medium' : (16, 7),
+            'figsize_small' : (10, 4),
+            'plot' : {'linewidth' : 1.7}
+            }
         return d[name]
     
     @staticmethod
-    def make_output_file_path(metric, metric_spec, net="Error", phase='train', ext='pdf'):
+    def make_output_file_path(metric, metric_spec='', net="Error", phase='train', ext='pdf'):
         """
         metric: train_loss, test_loss, learning_rate, ...
         metric_spec: box loss, object. loss, ...
@@ -501,21 +507,34 @@ class Plot:
             ytick.set_fontsize(14)
             ytick.set_fontweight('bold')
     @staticmethod
-    def set_xticklabels(ax, labels):#bar plot
-        ax.set_xticklabels(labels, fontsize = 14, fontweight='bold')
+    def set_xticklabels(ax, labels, rotation=0):#bar plot
+        ax.set_xticklabels(labels, fontsize = 14, fontweight='bold', rotation=rotation)
     @staticmethod
-    def set_xlabel(ax, xlabel):
-        ax.set_xlabel(xlabel, fontsize = 20, fontweight='bold', loc='center')
+    def set_xlabel(ax, xlabel, fontsize=20):
+        ax.set_xlabel(xlabel, fontsize = fontsize, fontweight='bold', loc='center')
+    @staticmethod
+    def set_ylabel(ax, ylabel, fontsize=20):
+        ax.set_ylabel(ylabel, fontsize = fontsize, fontweight='bold', loc='center')
     @staticmethod
     def set_fig_suptitle(fig, title):
         fig.suptitle(title, fontsize=26)
     @staticmethod
-    def set_title(ax, title):
-        ax.set_title(title, fontsize=16, fontweight='bold', loc='left')
+    def set_title(ax, title, fontsize=16):
+        ax.set_title(title, fontsize=fontsize, fontweight='bold', loc='left')
     @staticmethod
     def plot_best_fitness_points(ax,x,y):
         ax.plot(x,y, 'k*', markersize=10)
 
+
+class BaselineModels():
+    def __init__(self): pass
+
+    @staticmethod
+    def color_cycler():
+        return {'det_RON' : 'chocolate',
+                'det_SSD' : 'steelblue',
+                'det_FRCNN': 'deeppink',
+                'det_RFCN' : 'dimgrey'}
 
 
 if __name__ == '__main__':
