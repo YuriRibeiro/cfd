@@ -73,28 +73,27 @@ _di5 = {
                'date'   :   '03_Mar_2021_00h_06m',
                'tb'     :   'events.out.tfevents.1614741591.febe.27196.0',
                'model'  :   'yv5_X'
+            },
+    'yv5_12' : {'name'   :  'YOLOv5_UAVDT_12',
+               'date'   :   '07_Mar_2021_00h_06m',
+               'tb'     :   'events.out.tfevents.1615087268.febe.22541.0',
+               'model'  :   'yv5_S'
+            },
+    'yv5_13' : {'name'   :  'YOLOv5_UAVDT_13',
+               'date'   :   '07_Mar_2021_00h_07m',
+               'tb'     :   'events.out.tfevents.1615087295.febe.22748.0',
+               'model'  :   'yv5_M'
+            },
+    'yv5_14' : {'name'   :  'YOLOv5_UAVDT_14',
+               'date'   :   '07_Mar_2021_00h_08m',
+               'tb'     :   'events.out.tfevents.1615087417.febe.23319.0',
+               'model'  :   'yv5_L'
+            },
+     'yv5_15' : {'name'   :  'YOLOv5_UAVDT_15',
+               'date'   :   '07_Mar_2021_00h_11m',
+               'tb'     :   'events.out.tfevents.1615087647.febe.23551.0',
+               'model'  :   'yv5_X'
             }
-    #         },
-    # 'yv5_12' : {'name'   :  'YOLOv5_UAVDT_12',
-    #            'date'   :   '07_Mar_2021_00h_06m',
-    #            'tb'     :   'events.out.tfevents.1615087268.febe.22541.0',
-    #            'model'  :   'yv5_S'
-    #         },
-    # 'yv5_13' : {'name'   :  'YOLOv5_UAVDT_13',
-    #            'date'   :   '07_Mar_2021_00h_07m',
-    #            'tb'     :   'events.out.tfevents.1615087295.febe.22748.0',
-    #            'model'  :   'yv5_M'
-    #         },
-    # 'yv5_14' : {'name'   :  'YOLOv5_UAVDT_14',
-    #            'date'   :   '07_Mar_2021_00h_08m',
-    #            'tb'     :   'events.out.tfevents.1615087417.febe.23319.0',
-    #            'model'  :   'yv5_L'
-    #         },
-    #  'yv5_15' : {'name'   :  'YOLOv5_UAVDT_15',
-    #            'date'   :   '07_Mar_2021_00h_11m',
-    #            'tb'     :   'events.out.tfevents.1615087647.febe.23551.0',
-    #            'model'  :   'yv5_X'
-    #        },
 }
 _di3 = {
     'yv3_0' : {'name'   :   'YOLOv3_UAVDT_0',
@@ -141,6 +140,21 @@ _di3 = {
                'date'   :   '04_Mar_2021_18h_12m',
                'tb'     :   'events.out.tfevents.1614893298.febe.13458.0',
                'model'  :   'yv3_spp'
+            },
+    'yv3_9' : {'name'   :   'YOLOv3_UAVDT_9',
+               'date'   :   '09_Mar_2021_02h_11m',
+               'tb'     :   'events.out.tfevents.1615267525.febe.12691.0',
+               'model'  :   'yv3_tiny'
+            },
+    'yv3_10': {'name'   :   'YOLOv3_UAVDT_10',
+               'date'   :   '09_Mar_2021_02h_11m',
+               'tb'     :   'events.out.tfevents.1615267532.febe.12732.0',
+               'model'  :   'yv3'
+            },
+    'yv3_11': {'name'   :   'YOLOv3_UAVDT_11',
+               'date'   :   '09_Mar_2021_02h_12m',
+               'tb'     :   'events.out.tfevents.1615267562.febe.13158.0',
+               'model'  :   'yv3_spp'
             }
 }
 
@@ -174,7 +188,7 @@ class YOLO_UAVDT_CONFIGS:
 class _YC:#YoloConfigs
     def __init__(self): pass
     root = pathlib.Path(__file__).parent
-    # dict for yolov5 paths
+    # dict for yolov5 paths 
     @staticmethod
     def yv5df():
         return _pd_df_di5
@@ -277,7 +291,7 @@ class _NETsCONFIGS:
     @staticmethod
     def get_vline_pos():
         # Index of the end of the training sessions == epochs
-        return [50, 100]
+        return [50, 100, 150]
 
 class _YV3_PATHS():
     def __init__(self): pass
@@ -301,9 +315,9 @@ class _YV3_EXP_CONFIGS():
     @staticmethod
     def load_cats():
         return [
-            ('yv3_0', 'yv3_3', 'yv3_6'),
-            ('yv3_1', 'yv3_4', 'yv3_7'),
-            ('yv3_2', 'yv3_5', 'yv3_8'),
+            ('yv3_0', 'yv3_3', 'yv3_6', 'yv3_9' ),
+            ('yv3_1', 'yv3_4', 'yv3_7', 'yv3_10'),
+            ('yv3_2', 'yv3_5', 'yv3_8', 'yv3_11'),
             ]
 
     @staticmethod
@@ -318,6 +332,9 @@ class _YV3_EXP_CONFIGS():
             'yv3_6' : 'yv3_tiny',
             'yv3_7' : 'yv3',
             'yv3_8' : 'yv3_spp',
+            'yv3_9' : 'yv3_tiny',
+            'yv3_10' : 'yv3',
+            'yv3_11' : 'yv3_spp',
             }
         return table[name]
     
@@ -327,6 +344,9 @@ class _YV3_EXP_CONFIGS():
                 'yv3_spp'  : 'y',
                 'yv3'      : 'm',
                 'yv3_tiny' : 'c',        
+                'yv3_11'   : 'y',
+                'yv3_10'   : 'm',
+                'yv3_9'    : 'c',
                 'yv3_8'    : 'y',
                 'yv3_7'    : 'm',
                 'yv3_6'    : 'c',
@@ -343,7 +363,8 @@ class _YV3_EXP_CONFIGS():
     def learning_rates_schedules():
         return {
                 'Scratch' : ['yv3_0', 'yv3_1', 'yv3_2'],
-                'Finetune' : ['yv3_3', 'yv3_4', 'yv3_5', 'yv3_6', 'yv3_7', 'yv3_8']
+                'Finetune' : ['yv3_3', 'yv3_4', 'yv3_5', 'yv3_6', 'yv3_7', 'yv3_8'],
+                'Custom1' : ['yv3_9', 'yv3_10', 'yv3_11']
                 }
 
 class _YV5_PATHS():
@@ -369,10 +390,10 @@ class _YV5_EXP_CONFIGS():
     def load_cats():
         # KEEP THE ORDER, yv5_S, yv5_M, yv5_L, yv5_X
         return [
-            ('yv5_0', 'yv5_4', 'yv5_8' ),# 'yv5_12' ),#yv5_S
-            ('yv5_1', 'yv5_5', 'yv5_9' ),# 'yv5_13' ),#yv5_M
-            ('yv5_2', 'yv5_6', 'yv5_10'),# 'yv5_14'),#yv5_L
-            ('yv5_3', 'yv5_7', 'yv5_11'),# 'yv5_15')#yv5_X
+            ('yv5_0', 'yv5_4', 'yv5_8' , 'yv5_12'),#yv5_S
+            ('yv5_1', 'yv5_5', 'yv5_9' , 'yv5_13'),#yv5_M
+            ('yv5_2', 'yv5_6', 'yv5_10', 'yv5_14'),#yv5_L
+            ('yv5_3', 'yv5_7', 'yv5_11', 'yv5_15')#yv5_X
             ]
 
     @staticmethod

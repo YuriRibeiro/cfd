@@ -10,7 +10,6 @@ import numpy as np
 
 root = yegconfigs.root
 
-
 class _Benchmark_Utils():  
     def __init__(self, auto_calc=True):
         self.baseline_models = ['det_RON', 'det_SSD', 'det_FRCNN', 'det_RFCN']
@@ -58,10 +57,11 @@ class _Benchmark_Utils():
                 new_folder_name = f'{suffix}-{res}'
                 dest_folder_name = dest_uavdt / new_folder_name
                 if dest_folder_name.exists() and not only_dataframe:
-                    print(f'Aviso: pasta {str(dest_folder_name)} já existe no destino... Pulando...')
+                    #print(f'Aviso: pasta {str(dest_folder_name)} já existe no destino... Pulando...')
+                    table_old_new_path[res].extend([path, 'N/A'])
                     continue
+                table_old_new_path[res].extend([path, dest_folder_name])
                 dest_folder_name.mkdir(parents=True, exist_ok=True)
-                table_old_new_path[res].append({'old':path,'new':dest_folder_name})
                 if not only_dataframe:
                     det_files = path / f'det_{path.parent.stem}'
                     det_files = det_files.glob('*.txt')
@@ -74,7 +74,14 @@ class _Benchmark_Utils():
                                 f.write(fake_det)
                         else:
                             os.symlink(file, dest)
-        return pd.DataFrame(table_old_new_path, index=det_paths.index)
+        multi_idx = []
+        for exp in det_paths.index:
+            multi_idx.extend([(exp, 'old'),(exp, 'new',)]) 
+
+        multi_idx = pd.MultiIndex.from_tuples(multi_idx, names=["Exp", "Path"])
+        # Check all old paths: a.query("Path == 'old'")
+        # Check all new paths: a.query("Path == 'new'")
+        return pd.DataFrame(table_old_new_path, index=multi_idx)
     
     def _gather_AP_overall_data(self):
         deteva_uavdt_fopath = self.deteva_uavdt_fopath
@@ -237,11 +244,11 @@ class _Benchmark_Utils():
         bapoall = self.table_apoall_vs_resolution
         apoall = self.ap_overall_data
         nmodels = len(self.get_models())
-        nexps = len(self.get_df())
+        nexps = len(bapoall)
         ntrainstep = nexps//nmodels
         best_ap_exp_names = []
-        for i in range(0, nexps, ntrainstep):
-            batchi = bapoall.iloc[i:i+ntrainstep]
+        for i in range(0, nexps, nmodels):
+            batchi = bapoall.iloc[i:i+nmodels]
             ap_max = 0
             idx_max = 0
             exp_num_max = 0
@@ -518,16 +525,19 @@ if __name__ == '__main__':
     #a = Plot_YV3_DET_Bench(auto_calc=auto_calc)
     
     ## Symlink det files to uavdt benchmark RES_DET folder and a df with orig/dest files
-    #df_1 = a.transfer_to_uavdt_bench_folder(only_dataframe=False)
+    df_1 = a.transfer_to_uavdt_bench_folder(only_dataframe=False)
+    print('Paths transferidos para o det folder: \n', df_1.query("Path == 'new'"))
+        # Check all old paths: a.query("Path == 'old'")
+        # Check all new paths: a.query("Path == 'new'")
 
     ##Gather all AP results for overall detections
-    #df_2 = a.get_AP_overall_results()
+    df_2 = a.get_AP_overall_results()
 
     ## (Future) Plot resolution vs ap_overall
     #a.future_plot_resolution_vs_ap_overall()
 
     ## Selectbest ap exp for each model
-    #a.select_best_ap_overall_models(export_to_matlab=False)
+    a.select_best_ap_overall_models(export_to_matlab=True)
 
     ## Make Latex Table resolution vs ap_overall
     a.table_resolution_vs_ap_overall(save = SAVE)
