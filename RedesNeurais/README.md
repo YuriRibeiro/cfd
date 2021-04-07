@@ -65,7 +65,7 @@ Nesta seção, são expostas as principais características exploradas no treina
  
  ## Treinamento
 
-| Experimento      | mAP    | AP@0.5 | AP@0.75 | Curva PR |
+| Experimento      | mAP    | AP@0.5 | AP@0.75 | Fitness  |
 |------------------|--------|--------|---------|----------|
 | YOLOv3_UAVDT_0   |        |        |         |          |
 | YOLOv3_UAVDT_1   |        |        |         |          |
@@ -77,7 +77,7 @@ Nesta seção, são expostas as principais características exploradas no treina
 | YOLOv3_UAVDT_8   |        |        |         |          |
 
 
-| Experimento      | mAP    | AP@0.5 | AP@0.75 | Curva PR |
+| Experimento      | mAP    | AP@0.5 | AP@0.75 | Fitness  |
 |------------------|--------|--------|---------|----------|
 | YOLOv5_UAVDT_0   |        |        |         |          |
 | YOLOv5_UAVDT_1   |        |        |         |          |

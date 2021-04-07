@@ -90,6 +90,8 @@ class YOLOv5_UAVDT_CONFIG:
         opt.add_argument('--save-conf', action='store_false', help='save confidences in --save-txt labels')
         opt.add_argument('--save-json', action='store_false', help='save a cocoapi-compatible JSON results file')
 
+        opt.add_argument('--last-pt-weights', action='store_true', help='use last.pt as weights to the detection')
+
         #opt.add_argument('--project', default='runs/test', help='save to project/name')
         #opt.add_argument('--name', default='exp', help='save to project/name')
         opt = opt.parse_args()
@@ -105,6 +107,7 @@ class YOLOv5_UAVDT_DET(YOLOv5_UAVDT_CONFIG):
                              f"Experimentos disponíveis: {self.weight_paths.keys()}.")
         self.project = "YOLOv5_UAVDT_det"
         self.name = self.weight_paths[self.experimento].split(os.sep)[-3]
+        self.use_lastpt_weights = self.opt.last_pt_weights
         self.run_inference()
 
     def run_inference(self):
@@ -122,6 +125,7 @@ class YOLOv5_UAVDT_DET(YOLOv5_UAVDT_CONFIG):
 
         # Now, run the inference
         weights_file_path = self.weight_paths[self.experimento]
+        if self.use_lastpt_weights: weights_file_path = weights_file_path.parent / 'last.pt'
         test_py_path = os.path.join(yv5_path, "test.py")
         data_yaml_path = os.path.join(self.this_file_dir, self.experimento, "data_detection.yaml")
         with open(data_yaml_path, 'w') as arq:
@@ -296,6 +300,8 @@ class YOLOv3_UAVDT_CONFIG:
         opt.add_argument('--save-conf', action='store_false', help='save confidences in --save-txt labels')
         opt.add_argument('--save-json', action='store_false', help='save a cocoapi-compatible JSON results file')
 
+        opt.add_argument('--last-pt-weights', action='store_true', help='use last.pt as weights to the detection')
+
         #opt.add_argument('--project', default='runs/test', help='save to project/name')
         #opt.add_argument('--name', default='exp', help='save to project/name')
         opt = opt.parse_args()
@@ -310,6 +316,7 @@ class YOLOv3_UAVDT_DET(YOLOv3_UAVDT_CONFIG):
                              f"Experimentos disponíveis: {self.weight_paths.keys()}.")
         self.project = "YOLOv3_UAVDT_det"
         self.name = self.weight_paths[self.experimento].split(os.sep)[-3]
+        self.use_lastpt_weights = self.opt.last_pt_weights
         self.run_inference()
 
     def run_inference(self):
@@ -327,6 +334,7 @@ class YOLOv3_UAVDT_DET(YOLOv3_UAVDT_CONFIG):
 
         # Now, run the inference
         weights_file_path = self.weight_paths[self.experimento]
+        if self.use_lastpt_weights: weights_file_path = weights_file_path.parent / 'last.pt'
         test_py_path = os.path.join(yv3_path, "test.py")
         data_yaml_path = os.path.join(self.this_file_dir, self.experimento, "data_detection.yaml")
         with open(data_yaml_path, 'w') as arq:
@@ -431,9 +439,6 @@ class YOLOv3_UAVDT_DET(YOLOv3_UAVDT_CONFIG):
         print(f"[INFO] Resultados salvos em {output_path}")
         # Final msg
         print("[INFO] Fim da execução.")
-
-
-
 
 
 class Main:
