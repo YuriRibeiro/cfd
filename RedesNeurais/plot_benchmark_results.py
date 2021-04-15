@@ -12,12 +12,34 @@ root = yegconfigs.root
 
 class _Benchmark_Utils():  
     def __init__(self, auto_calc=True):
+        self.list_of_allowed_trackers = ['SORT']
+        self.baseline_mot_models = ['RON', 'SSD', 'FRCNN', 'RFCN']
+        self.baseline_ap_models = {'RON': 0.2159, 'SSD':0.3362, 'FRCNN':0.2232, 'RFCN':0.3435}
+        self.baseline_mot_models_fps = {'RON':230.55, 'SSD':153.70, 'FRCNN':245.79, 'RFCN':209.31}
         self.baseline_models = ['det_RON', 'det_SSD', 'det_FRCNN', 'det_RFCN']
         self.baseline_speeds_fps = [11.11, 41.55, 2.75, 4.65] #gpu speeds..
+        self.baseline_speeds_fps_dict = {'RON':11.11, 'SSD':41.55, 'FRCNN':2.75, 'RFCN':4.65} #gpu speeds..
         self.cut_seq_obj_classes = ['truck', 'bus', 'lagre-occ', 'medium-occ', 'small-occ', 'medium-out', 'small-out', 'long']
         self.dest_uavdt = root.parent/'Datasets'/'UAVDT'/'UAV-benchmark-MOTD_v1.0'/'RES_DET'
         self.deteva_uavdt_fopath = root.parent/'Datasets'/'UAVDT'/'UAV-benchmark-MOTD_v1.0'/'det_EVA'
+        self.res_mot_fopath = root.parent/'Datasets'/'UAVDT'/'UAV-benchmark-MOTD_v1.0'/'RES_MOT'
         self.det_paths_with_resolutions = self._get_det_paths_with_resolutions()
+        self.seqDirs = { 'overall' : ['M0203','M0205','M0208','M0209','M0403','M0601','M0602','M0606','M0701','M0801',
+                                      'M0802','M1001','M1004','M1007','M1009','M1101','M1301','M1302','M1303','M1401'],
+                        'day'       : ['M0208','M0209','M0403','M0601','M0602','M0606','M0801','M0802','M1301','M1302','M1303','M1401'],
+                        'night'       : ['M0203','M0205','M1001','M1007','M1101'],
+                        'fog'       : ['M0701','M1004','M1009'],
+
+                        'low'       : ['M0203','M0205','M0209','M0801','M0802','M1101','M1303','M1401'],
+                        'medium'       : ['M0208','M0403','M0602','M0606','M1001','M1004','M1007','M1009','M1301','M1302'],
+                        'high'       : ['M0601','M0701'],
+
+                        'front'       : ['M0208','M0209','M0403','M0601','M0602','M0606','M1001','M1004','M1007','M1101','M1301','M1401'],
+                        'side'       : ['M0205','M0209','M0403','M0601','M0606','M0802','M1101','M1302','M1303'],
+                        'bird'       : ['M0203','M0701','M0801','M1009'],
+
+                        'long'       : ['M0209','M1001']
+                        }
 
         if auto_calc:
             self.ap_overall_data = self._gather_AP_overall_data()
@@ -164,7 +186,7 @@ class _Benchmark_Utils():
                 c = color_cycler()[model]
                 ax.plot(x,y,'o-', color=c, label=model, linewidth=0.1, markersize=5)
                 ax.errorbar(x,y,err, color=c, capsize=5)
-            
+ 
             # ax.hlines([33.33], 256, 1536, linestyle='dashed', color='black', linewidth=1)
             # ax.set_yticks(np.concatenate([ax.get_yticks(), [33.3]]))
             ax.set_ylim([0, ax.get_yticks().max()])
@@ -180,12 +202,26 @@ class _Benchmark_Utils():
             #             fontsize = 16)
             for spine in ax.spines.values():
                 spine.set_visible(False)
-            ax.legend(loc='upper left', fontsize=14)
-        
+            legend = ax.legend(loc='upper left', fontsize=14)
+            frame = legend.get_frame()
+            frame.set_edgecolor('red')
+
+        for idx in mrs_df.index:
+            number = idx.split('_')[-1]
+            mrs_df.at[idx, 'model'] = f'{mrs_df.loc[idx]["model"]} ({number})'
+        # Sort by net_name number
+        mrs_df.sort_index(key=lambda x: [int(z[4:]) for z in x], inplace=True)
+
         if save:
-            net_name = model[:3]
+            net_name = mrs_df.model.iloc[0][:3]
             path = Plot.make_output_file_path('res_vs_mean_speed_vs_ap', net=net_name, phase='test')
-            fig.savefig(path)
+            fig.savefig(path, bbox_inches='tight')
+
+            latex = mrs_df.to_latex(index=False, float_format="%.2f")
+            path = Plot.make_output_file_path('table_all_res_vs_speed_overall', net=net_name, ext='txt', phase='test')
+            with open(path, 'w') as f:
+                f.write(latex)
+
                    
     def _future_plot_resolution_vs_ap_overall(self):
         df = self.ap_overall_data
@@ -276,38 +312,91 @@ class _Benchmark_Utils():
         return best_ap_exp_names
 
     def _plot_ap_vs_speed_best_models(self, save=False):
-        #mrs_df, df_mean, df_std = self.speed_vs_resolution_df
         bap_exp_names = self.select_best_ap_overall_models(export_to_matlab = False)
         df = self.ap_overall_data.loc[bap_exp_names][['model', 'resolution', 'AP_overall']]
         _,mean_speed_vs_res,_ = self._gather_speed_vs_resolution_data()
+        if df.model.iloc[0][:3] == 'yv5':
+            other = Plot_YV3_DET_Bench(auto_calc=True)
+        else:
+            other = Plot_YV5_DET_Bench(auto_calc=True)
+        
+        bap_exp_names_other = other.select_best_ap_overall_models(export_to_matlab = False)
+        df_other = other.ap_overall_data.loc[bap_exp_names_other][['model', 'resolution', 'AP_overall']]
+        _,other_mean_speed_vs_res,_ = other._gather_speed_vs_resolution_data()
+        
+        bap_exp_names.extend(bap_exp_names_other)
+        df = pd.concat((df_other,df)).sort_index(ascending=False)
+        mean_speed_vs_res = pd.concat((other_mean_speed_vs_res, mean_speed_vs_res), axis=1)
+
+        c_cicler = {}
+        c_cicler.update(yegconfigs._YV3_EXP_CONFIGS.color_cycler())
+        c_cicler.update(yegconfigs._YV5_EXP_CONFIGS.color_cycler())
+        c_cicler.update(yegconfigs.BaselineModels.color_cycler())
+
         models = [] #'yv5_S', ...
         model_resolution = [] #('model (resolution)')
         x = [] # x in (ms/img)
         y = [] # y in (AP
+
         for model, res, ap in df.values:
             res = f'{res}x{res}'
             models.append(model)
             model_resolution.append(f'{model} ({res})')
             x.append(mean_speed_vs_res.loc[res, model])
             y.append(ap)
+
+        for model in self.baseline_mot_models:
+            models.append(model)
+            model_resolution.append(f'{model}')
+            x.append(1000/self.baseline_speeds_fps_dict[model])
+            y.append(self.baseline_ap_models[model]*100)
+
         # PLOT
         net_name = self.get_df().name[0][:6]
         with plt.style.context('bmh'):
-            fig, ax = plt.subplots(figsize = (10,4), constrained_layout=True)
+            fig, ax = plt.subplots(figsize = (10,6), constrained_layout=True)
             for mi, mri, xi, yi in zip(models, model_resolution, x, y):
-                c = self.color_cycler()[mi]
+                c = c_cicler[mi]
                 ax.plot(xi, yi, '*', color=c, markersize = 18, label = mri)
-            Plot.set_title(ax,f'Modelos Selecionados ({net_name}): AP VS Velocidade de Detecção')
+            Plot.set_title(ax,f'AP VS Velocidade de Detecção -- Melhores Modelos')
             Plot.set_xlabel(ax, 'Velocidade (ms/ img)', fontsize=14)
             Plot.set_ylabel(ax, 'AP', fontsize = 14)
-            ax.legend(loc='upper left',fontsize=12)
+            legend = ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), fontsize=12, ncol=4)
+            frame = legend.get_frame()
+            frame.set_edgecolor('red')
+
             for spine in ax.spines.values():
                 spine.set_visible(False)
+            
+        # Plot lines connecting models
+        yv5 = []
+        yv3 = []
+        for model, xm, ym in zip(models, x, y):
+             if model[:3] == 'yv5':
+                 yv5.append([xm,ym])
+             if model[:3] == 'yv3':
+                 yv3.append([xm,ym])
+        yv5.sort(key=lambda x: x[0])
+        yv3.sort(key=lambda x: x[0])
+        yv5= np.array(yv5)
+        yv3= np.array(yv3)
 
+        ax.plot(yv5[:,0], yv5[:,1], 'k--', linewidth=1)
+        ax.plot(yv3[:,0], yv3[:,1], 'k--', linewidth=1)
+        
         if save:
             net_name = model[:3]
-            path = Plot.make_output_file_path('best_models_speed_vs_ap', net=net_name, phase='test')
-            fig.savefig(path)
+            path = Plot.make_output_file_path('best_models_speed_vs_ap', net='', phase='')
+            fig.savefig(path, bbox_inches='tight')
+
+            fps = [1000/i for i in x]
+            df = pd.DataFrame({'Modelos':models, 'Vel. (ms/img)':x, 'Vel. (fps)': fps, 'AP':y})
+            df.sort_values(by=['AP'], inplace=True, ascending=False)
+            latex = df.to_latex(index=False, float_format="%.2f")
+            path = Plot.make_output_file_path('table_best_ap_vs_speed_det_results', net='', ext='txt', phase='')
+            with open(path, 'w') as f:
+                f.write(latex)
+
 
     def _plot_pr_curve_best_models(self, save=False):
         deteva_uavdt_fopath = self.deteva_uavdt_fopath
@@ -342,7 +431,7 @@ class _Benchmark_Utils():
             dic[name] = [exp_name_abbreviated, model, res, ap, speed, prec, rec]
         # Plot
         with plt.style.context('bmh'):
-            fig, ax = plt.subplots(figsize=(10,4), constrained_layout=True)
+            fig, ax = plt.subplots(figsize=(10,6), constrained_layout=False)
             for k,(exp_name_wn, model, res, ap, fps, p, r) in dic.items(): #wn = with number
                 x = r
                 y = p
@@ -350,20 +439,25 @@ class _Benchmark_Utils():
                     c = self.color_cycler()[model]
                 else:
                     c = yegconfigs.BaselineModels.color_cycler()[model]
+                    model = model[4:]
                 ax.plot(x, y, color=c, label=f'{model} ({ap:.2f}%, {fps:.2f})')
                 
             net_name = bestmodels[0][:6]
             Plot.set_title(ax,f'Precision VS Recall -- Modelos {net_name} e de Referência')
             Plot.set_xlabel(ax, 'Recall', fontsize=14)
             Plot.set_ylabel(ax, 'Precision', fontsize = 14)
-            ax.legend(loc='lower left', fontsize=12, ncol=2)
+            #legend = ax.legend(loc='lower left', fontsize=12, ncol=2)
+            legend = ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), fontsize=12, ncol=3)
+            frame = legend.get_frame()
+            frame.set_edgecolor('red')
+
             for spine in ax.spines.values():
                 spine.set_visible(False)
 
         if save:
             net_name = self.get_models()[0][:3]
             path = Plot.make_output_file_path('best_models_precision_vs_recall', net=net_name, phase='test')
-            fig.savefig(path)
+            fig.savefig(path, bbox_inches='tight')
         return 
 
     def _plot_barchart_seq_obj(self, save=False):
@@ -406,12 +500,21 @@ class _Benchmark_Utils():
         # Make
         self._barplot(M, bar_heights, c, labels, legends=legends, save_path=path,  save=save)
         
-    def _barplot(self, M, bar_heights, c_cicler, labels, save_path, legends='', barWidth=0.3, step=3, save=False):
+    def _barplot(self, M, bar_heights, c_cicler, labels, save_path, legends='', barWidth=0.3, step=3, save=False,
+                fig_title='AP por Atributo das Sequências de Vídeo', legend_ncols=2,
+                mini_groups_sizes=[], bbox_to_anchor=[], ylabel='AP'):
         # Calc bar positions:
         step = step
-        if M.shape[1]*barWidth <= step: print("Warning! Barras Sobrepostas. (barWidth*(#barras_no_grupo) >= step).")
+        if M.shape[1]*barWidth >= step: print("Warning! Barras Sobrepostas. (barWidth*(#barras_no_grupo) >= step).")
         r1 = np.arange(0, step*M.shape[1], step)
         bar_positions = [[x + idx*barWidth for x in r1] for idx in range(0, M.shape[0])]
+
+        if len(mini_groups_sizes) >= 1:
+            mini_steps_idx = [sum(mini_groups_sizes[:i+1]) for i in range(len(mini_groups_sizes))]
+            mini_step_width = 0.5*barWidth
+            for idx in mini_steps_idx:
+                for i in range(idx, len(bar_positions)):
+                    bar_positions[i] = [k+mini_step_width for k in bar_positions[i]]
         
         # Bar Plot
         with plt.style.context('bmh'):
@@ -424,23 +527,292 @@ class _Benchmark_Utils():
             x_ticks_labels = [f'{name}' for name in labels]
             x_ticks_pos = [step*r + 0.5*len(legends)*barWidth  for r in range(len(barp))]
             
-            ax.grid(False)
+            #ax.grid(False)
             ax.set_xticks(x_ticks_pos)
             Plot.set_ylabel(ax, 'AP', fontsize=14)
-            Plot.set_title(ax, 'AP por Atributo das Sequências de Vídeo')
+            Plot.set_title(ax, fig_title)
             Plot.set_xticklabels(ax, x_ticks_labels, rotation=60)
             Plot.set_yticklabels(ax,)
-            fig.legend(loc='upper right', ncol=2, fontsize=14)
-            #Plot.set_legends(fig, [ax], bbox_to_anchor=(1,1))
-
+            legend = fig.legend(loc='upper right', ncol=legend_ncols, fontsize=14,
+                       bbox_to_anchor=bbox_to_anchor)
+            frame = legend.get_frame()
+            frame.set_edgecolor('red')
             for spine in ax.spines.values():
                 spine.set_visible(False)
 
         # SaveFig
-        if save: fig.savefig(save_path)
+        if save: fig.savefig(save_path, bbox_inches='tight')
+    
+    def _gather_tracking_results(self, individual_results=False, individual_trackers_list=None):
+        fopaths = [p for p in self.res_mot_fopath.glob('*/') if p.is_dir()]
+        
+        # tracker
+        scores = []
+        data = []
+        multi_idx = [] # DataFrame
+        selfdf = self.get_df()
+        numOfModels = len(self.get_models())
 
+        for fopath in fopaths:
+            baseline_model = False
+            subfolders = [path for path in fopath.glob('*/') if path.is_dir()]
+            for subfolder in subfolders:
+                if subfolder.parent.stem in self.baseline_mot_models:
+                    if subfolder.stem in self.list_of_allowed_trackers:
+                        det_name = subfolder.parent.stem
+                        tracker_name = subfolder.stem
+                        params = None
+                        baseline_model = True
+                    else:
+                        continue
+                else:
+                    tracker_full_name = subfolder.stem + subfolder.suffix
+                    split = tracker_full_name.split('-')
+                    tracker_name, param_values = split[0], split[1:]
+                    if tracker_name == 'SORT':
+                        param_names = ['max_age', 'min_hits', 'iout_thresh']
+                    params = {k:v for k,v in zip(param_names, param_values)}
+                    det_name = subfolder.parent.stem
+                
+                # Scores
+                to_float = lambda x: [float(i) for i in x]
+                
+                if not individual_results:
+                    with open(subfolder / 'eval.txt') as f:
+                        mot_results = to_float(f.readline()[:-1].split(','))
+                    if not baseline_model:
+                        with open(subfolder.parent / f'speed-{tracker_full_name}.txt') as f:
+                            fps_result = float(f.readline()[:-1].split(' ')[-1])
+                        exp = det_name.split('-')[0]
+                        if exp not in selfdf.name.values:
+                            continue
+                        net_num = int(selfdf.loc[selfdf.name == exp].model.index[0].split('_')[-1]) // numOfModels
+                        net_name = selfdf.loc[selfdf.name == exp].model.values[0] + f' ({net_num})'
+                    else:
+                        fps_result = self.baseline_mot_models_fps[det_name]
+                        net_name = det_name
+                    
+                    data.append((net_name, *mot_results, fps_result, params))
+                    multi_idx.append((det_name, tracker_name))
+                
+                if individual_results:
+                    if baseline_model:
+                        pass
+                    elif (not det_name in individual_trackers_list.index) or \
+                       (not individual_trackers_list.loc[det_name]['Tr. Params'][0] == [tracker_name, *params.values()]):
+                        continue
+
+                    eval_individual_files = list(subfolder.glob('eval_seqDirs_*.txt')) + list(subfolder.glob('eval.txt'))
+                    for path in eval_individual_files:
+                        with open(path) as f:
+                            mot_results = to_float(f.readline()[:-1].split(','))
+                        video = path.stem.split('_')[-1]
+                        if video=='eval': video='overall'
+
+                        data.append([video, *mot_results])
+                        multi_idx.append((det_name, tracker_name))
+        
+        if not individual_results:
+            multi_idx = pd.MultiIndex.from_tuples(multi_idx, names=["Detector", "Tracker"])
+            # To check for a tracker name: a.query("Path == 'tracker_name'")
+            columns = ['net_name', 'IDF1', 'IDP', 'IDR',
+                        'Rcll', 'Prcn', 'FAR',
+                        'GT', 'MT', 'PT', 'ML',
+                        'FP', 'FN', 'IDs', 'FM',
+                        'MOTA', 'MOTP', 'MOTAL',
+                        'FPS', 'Params']
+
+        if individual_results:
+            multi_idx = pd.MultiIndex.from_tuples(multi_idx, names=["Detector", "Tracker"])
+            # To check for a tracker name: a.query("Path == 'tracker_name'")
+            columns = ['video', 'IDF1', 'IDP', 'IDR',
+                        'Rcll', 'Prcn', 'FAR',
+                        'GT', 'MT', 'PT', 'ML',
+                        'FP', 'FN', 'IDs', 'FM',
+                        'MOTA', 'MOTP', 'MOTAL']
+
+        return pd.DataFrame(data, index=multi_idx, columns = columns)
+
+    def _make_df_tracking_results(self, save=False):
+        results = self._gather_tracking_results()
+        detectors = []
+        cols_to_save =  ['net_name', 'GT', 'MT', 'PT', 'ML', 'FP', 'FN', 'IDs', 'FM', 'MOTA', 'MOTP', 'FPS', 'Tr. Params']
+        best_results = []
+        
+        # Partial Results
+        for i in results.index:
+            if i[0] not in detectors: detectors.append(i[0])
+        for i in detectors:
+            baseline_model = False
+            if i in self.baseline_mot_models:
+                baseline_model = True
+            df = results.query(f'Detector == "{i}"')
+            #cat params to print
+            cat = []
+            for i,j in zip(df.Params.values, df.index):
+                tracker_name = j[1]
+                if i == None: i = {'Dummy':'Não Informado'}
+                t = list(i.values())
+                t = [tracker_name, *t]
+                cat.append([t])
+            tdf = pd.concat((df,pd.DataFrame(cat, index = df.index, columns=['Tr. Params'])), axis =1)
+            tdf.sort_values(by='MOTA', ascending=False, inplace=True)
+            best_results.append(tdf.iloc[0])
+            if save and not baseline_model:
+                net_name_prefix = tdf.net_name[0][:3]
+                latex = tdf.to_latex(index=False, float_format="%.2f", columns = cols_to_save)
+                path = Plot.make_output_file_path(f'table_mot_results_{tdf.net_name[0].replace(" ","")}', net=net_name_prefix, ext='txt', phase='test')
+                with open(path, 'w') as f:
+                    f.write(latex)
+
+        #Best Results
+        brdf = pd.concat(best_results, axis=1).T
+        brdf.sort_values(by='MOTA', ascending=False, inplace=True)
+        if save:
+            latex = brdf.to_latex(index=False, float_format=lambda x: '%.2f' % x, columns = cols_to_save)
+            path = Plot.make_output_file_path('table_mot_best_results', net=net_name_prefix, ext='txt', phase='test')
+            with open(path, 'w') as f:
+                f.write(latex)
+        return brdf
+
+    def export_best_tracking_models_to_bench(self):
+        df = self.plot_tracking_results(save=False, from_export_function=True)
+        output_fipath = self.res_mot_fopath.parent / 'yuri_best_mota_overall_models.m'
+        det = []
+        tracker = []
+        for (d,t) in df.index:
+            det.append(d)
+            tr_params = df.loc[d]['Tr. Params'][0]
+            if tr_params[1] == 'Não Informado':
+                t = tr_params[0]
+            else:
+                t = '-'.join(tr_params)
+            tracker.append(t)
+        dets = "','".join(det)
+        trackers = "','".join(tracker)
+        content1 = f"yuri_best_mota_overall_selected_det = {{'{dets}'}};"
+        content2 = f"yuri_best_mota_overall_selected_tracker = {{'{trackers}'}};"
+        with open(output_fipath, 'w') as f:
+            f.write(content1+'\n'+content2)
+
+
+    def _plot_tracking_results(self, save=False, from_export_function=False):
+        output_path = lambda x : root / 'plots' / f'table_best_of_all_trackers_results_pt{x}.txt'
+        cols_to_save_1 =  ['net_name', 'MOTA', 'MOTP', 'FPS', 'Tr. Params']
+        cols_to_save_2 =  ['net_name', 'GT', 'MT', 'PT', 'ML', 'FP', 'FN', 'IDs', 'FM']
+        brdf = self._make_df_tracking_results(save=save)
+        if self.get_models()[0][:3] == 'yv5':
+            a = Plot_YV3_DET_Bench(auto_calc=False)
+        elif self.get_models()[0][:3] == 'yv3':
+            a = Plot_YV5_DET_Bench(auto_calc=False)
+        else:
+            raise Exception('Modelo não suportado para plot_tracking_results().')
+        brdf_other = a._make_df_tracking_results()
+        
+        maintain = [i for i in brdf_other.index if i not in brdf.index]
+        brdf_other = brdf_other.loc[maintain]
+        
+        #cat df
+        brdf = pd.concat((brdf, brdf_other))
+        brdf.sort_values(by='MOTA', inplace=True, ascending=False)
+        if from_export_function:
+            return brdf
+
+        if save:
+            latex1 = brdf.to_latex(index=False, float_format=lambda x: '%.2f' % x, columns=cols_to_save_1)
+            latex2 = brdf.to_latex(index=False, float_format=lambda x: '%.2f' % x, columns=cols_to_save_2)
+            with open(output_path(1), 'w') as f:
+                f.write(latex1)
+            with open(output_path(2), 'w') as f:
+                f.write(latex2)
+        
+        #barchart plot
+        
+        ## gather all mota individual results
+        btrackers = brdf[['net_name', 'Tr. Params']] #best trackers
+        bindex = btrackers.index.unique()
+        individual_results = self._gather_tracking_results(individual_results=True, individual_trackers_list=btrackers)
+        ## Construct dataframe with video attributes
+        ok_test = [x in bindex and y in individual_results.index.unique() for x,y in zip(individual_results.index.unique(), btrackers.index.unique())]
+        if len(ok_test) == len(bindex) \
+            and len(ok_test) == len(individual_results.index.unique()) \
+            and all(ok_test): pass
+        else:
+            raise Exception('Erro: Nem todos os resultados individuais foram obtidos...')
+        ## Query inidividual results by video attribute
+        attributes = self.seqDirs.keys()
+        dic = {}
+        for midx in bindex:
+            det, tracker = midx
+            dic[midx] = {}
+            for att in attributes:
+                query = individual_results.query(f'Detector=="{det}" & Tracker=="{tracker}" & video=="{att}"')
+                meanMOTA = query.MOTA.mean()
+                dic[midx].update({att:meanMOTA})
+        df = pd.DataFrame.from_dict(dic, columns = dic[midx].keys(), orient='index')
+        df.sort_index(ascending=False, inplace=True)
+
+        # Barchart Plot
+        save_path = Plot.make_output_file_path('table_best_mota_video_attr_pt1', net='', ext='pdf', phase='')
+        mini_group_sizes = [4,3]
+        pt1 = 5
+        values = [df.iloc[i].values[:pt1] for i in range(len(df.index))]
+        M = np.vstack(values)
+        bar_heights = [M[idx, :] for idx in range(M.shape[0])]
+        c_cicler = {}
+        c_cicler.update(yegconfigs._YV3_EXP_CONFIGS.color_cycler())
+        c_cicler.update(yegconfigs._YV5_EXP_CONFIGS.color_cycler())
+        c_cicler.update(yegconfigs.BaselineModels.color_cycler())
+        legends = [brdf.net_name.loc[i[0]][0].split(' ')[0] for i in df.index]
+        labels = list(df.columns[:pt1])
+
+        self._barplot(M, bar_heights, c_cicler, labels, save_path, legends=legends,
+                     barWidth=0.3, step=4, save=save, legend_ncols=4, fig_title='MOTA por Atributo dos Vídeos',
+                     mini_groups_sizes=mini_group_sizes, bbox_to_anchor=(1, 1.1), ylabel='MOTA')
+        
+
+        save_path = Plot.make_output_file_path('table_best_mota_video_attr_pt2', net='', ext='pdf', phase='')
+        values = [df.iloc[i].values[pt1:-1] for i in range(len(df.index))]
+        labels = list(df.columns[pt1:-1])
+        self._barplot(M, bar_heights, c_cicler, labels, save_path, legends=legends,
+                     barWidth=0.3, step=4, save=save, legend_ncols=4, fig_title='MOTA por Atributo dos Vídeos',
+                     mini_groups_sizes=mini_group_sizes, bbox_to_anchor=(1, 1.1), ylabel='MOTA')
+        
+# Plot Class from yegconfigs
+Plot = yegconfigs.Plot
+
+class Plot_Graphs:
+    def __init__(self):
+        pass
+    def transfer_to_uavdt_bench_folder(self, only_dataframe=False):
+        return self._symlinks_det_folder_to_uavdt(only_dataframe=only_dataframe)
+    
+    def get_AP_overall_results(self):
+        return self._gather_AP_overall_data()
+    
+    def future_plot_resolution_vs_ap_overall(self):
+        return self.future_plot_resolution_vs_ap_overall()
+    
+    def table_resolution_vs_ap_overall(self, save=False):
+        return self._table_resolution_vs_ap_overall(save)
+    
+    def plot_resolution_vs_speed(self, save=False):
+        return self._plot_resolution_vs_speed(save)
+    
+    def select_best_ap_overall_models(self, export_to_matlab=True):
+        return self._select_best_ap_overall_models(export_to_matlab)
+    
+    def plot_ap_vs_speed_best_models(self, save=False):
+        return self._plot_ap_vs_speed_best_models(save)
+    
+    def plot_pr_curve_best_models(self, save=False):
+        return self._plot_pr_curve_best_models(save)
+    
+    def plot_tracking_results(self, save):
+        return self._plot_tracking_results(save)
+        
 #AutoCalc Should be set off, if you want to link det files to uavdt
-class Plot_YV5_DET_Bench(_Benchmark_Utils, yegconfigs.YV5_CONFIGS):
+class Plot_YV5_DET_Bench(_Benchmark_Utils, yegconfigs.YV5_CONFIGS, Plot_Graphs):
     def __init__(self, auto_calc=True):
         self.det_paths_dict = self.get_det_paths() #yegconfigs.YV5_CONFIGS
         self.net_dataframe = self.get_df()
@@ -448,35 +820,7 @@ class Plot_YV5_DET_Bench(_Benchmark_Utils, yegconfigs.YV5_CONFIGS):
         if auto_calc:
             self.table_apoall_vs_resolution = self.table_resolution_vs_ap_overall()
 
-    def transfer_to_uavdt_bench_folder(self, only_dataframe=False):
-        return self._symlinks_det_folder_to_uavdt(only_dataframe=only_dataframe)
-    
-    def get_AP_overall_results(self):
-        return self._gather_AP_overall_data()
-    
-    def future_plot_resolution_vs_ap_overall(self):
-        return self.future_plot_resolution_vs_ap_overall()
-    
-    def table_resolution_vs_ap_overall(self, save=False):
-        return self._table_resolution_vs_ap_overall(save)
-    
-    def plot_resolution_vs_speed(self, save=False):
-        return self._plot_resolution_vs_speed(save)
-    
-    def select_best_ap_overall_models(self, export_to_matlab=True):
-        return self._select_best_ap_overall_models(export_to_matlab)
-    
-    def plot_ap_vs_speed_best_models(self, save=False):
-        return self._plot_ap_vs_speed_best_models(save)
-    
-    def plot_pr_curve_best_models(self, save=False):
-        return self._plot_pr_curve_best_models(save)
-    
-    def plot_barchart_seq_obj(self, save):
-        return self._plot_barchart_seq_obj(save)
-
-
-class Plot_YV3_DET_Bench(_Benchmark_Utils, yegconfigs.YV3_CONFIGS):
+class Plot_YV3_DET_Bench(_Benchmark_Utils, yegconfigs.YV3_CONFIGS, Plot_Graphs):
     def __init__(self, auto_calc=True):
         self.det_paths_dict = self.get_det_paths() #yegconfigs.YV3_CONFIGS
         self.net_dataframe = self.get_df()
@@ -484,60 +828,26 @@ class Plot_YV3_DET_Bench(_Benchmark_Utils, yegconfigs.YV3_CONFIGS):
         if auto_calc:
             self.table_apoall_vs_resolution = self.table_resolution_vs_ap_overall()
 
-    def transfer_to_uavdt_bench_folder(self, only_dataframe=False):
-        return self._symlinks_det_folder_to_uavdt(only_dataframe=only_dataframe)
-    
-    def get_AP_overall_results(self):
-        return self._gather_AP_overall_data()
-    
-    def future_plot_resolution_vs_ap_overall(self):
-        return self.future_plot_resolution_vs_ap_overall()
-    
-    def table_resolution_vs_ap_overall(self, save=False):
-        return self._table_resolution_vs_ap_overall(save)
-    
-    def plot_resolution_vs_speed(self, save=False):
-        return self._plot_resolution_vs_speed(save)
-    
-    def select_best_ap_overall_models(self, export_to_matlab=True):
-        return self._select_best_ap_overall_models(export_to_matlab)
-    
-    def plot_ap_vs_speed_best_models(self, save=False):
-        return self._plot_ap_vs_speed_best_models(save)
-    
-    def plot_pr_curve_best_models(self, save=False):
-        return self._plot_pr_curve_best_models(save)
-    
-    def plot_barchart_seq_obj(self, save):
-        return self._plot_barchart_seq_obj(save)
 
-# Plot Class from yegconfigs
-Plot = yegconfigs.Plot
+def yuri_plot_routine(classe=Plot_YV5_DET_Bench, auto_calc=True, SAVE=False):
+    #auto_calc=True #False only for the first run
 
-
-if __name__ == '__main__':
-
-    # Init
-    SAVE = False
-    auto_calc=True #False only for the first run
-
-    a = Plot_YV5_DET_Bench(auto_calc=auto_calc)
-    #a = Plot_YV3_DET_Bench(auto_calc=auto_calc)
+    a = classe(auto_calc=auto_calc)
     
     ## Symlink det files to uavdt benchmark RES_DET folder and a df with orig/dest files
-    df_1 = a.transfer_to_uavdt_bench_folder(only_dataframe=False)
-    print('Paths transferidos para o det folder: \n', df_1.query("Path == 'new'"))
+    #df_1 = a.transfer_to_uavdt_bench_folder(only_dataframe=False)
+    #print('Paths transferidos para o det folder: \n', df_1.query("Path == 'new'"))
         # Check all old paths: a.query("Path == 'old'")
         # Check all new paths: a.query("Path == 'new'")
 
     ##Gather all AP results for overall detections
-    df_2 = a.get_AP_overall_results()
+    #df_2 = a.get_AP_overall_results()
 
     ## (Future) Plot resolution vs ap_overall
     #a.future_plot_resolution_vs_ap_overall()
 
     ## Selectbest ap exp for each model
-    a.select_best_ap_overall_models(export_to_matlab=True)
+    #a.select_best_ap_overall_models(export_to_matlab=True)
 
     ## Make Latex Table resolution vs ap_overall
     a.table_resolution_vs_ap_overall(save = SAVE)
@@ -551,8 +861,28 @@ if __name__ == '__main__':
     ## Plot PR Curve for the best and baseline models
     a.plot_pr_curve_best_models(save= SAVE)
 
-    ## Plot seq and obj det scores:
-    a.plot_barchart_seq_obj(save= SAVE)
+    ## Export best MOTA overrall models to the benchmark folder
+    #a.export_best_tracking_models_to_bench()
+    
+    ## Plot tracking results by attribute and save tables with best tracking MOTA
+    a.plot_tracking_results(save=SAVE)
+
+  
+if __name__ == '__main__':
+
+    # Debug
+    #SAVE = True
+    #auto_calc=True #False only for the first run
+    #a = Plot_YV5_DET_Bench(auto_calc=auto_calc)
+    #a = Plot_YV3_DET_Bench(auto_calc=auto_calc)
+    #a.plot_ap_vs_speed_best_models(save= SAVE)
+    #a.plot_resolution_vs_speed(save=SAVE)
+
+    # Full Plots:
+    SAVE = True
+    auto_calc = True #False only for the first run
+    yuri_plot_routine(classe=Plot_YV5_DET_Bench, auto_calc=auto_calc, SAVE=SAVE)
+    yuri_plot_routine(classe=Plot_YV3_DET_Bench, auto_calc=auto_calc, SAVE=SAVE)
 
     pass
 # %%

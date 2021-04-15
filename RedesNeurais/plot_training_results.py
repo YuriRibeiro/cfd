@@ -458,20 +458,22 @@ class Plot_Yv5_Train_Data(Plot_Train_Data, YV5_Config):
 # Plot Class
 Plot = yegconfigs.Plot
 
-if __name__ == '__main__':
-
-    save = False
-    a = Plot_Yv3_Train_Data()
-    b = Plot_Yv5_Train_Data()
+def yuri_plot_routine(classe=Plot_Yv5_Train_Data, SAVE=False):
+    #auto_calc=True #False only for the first run
+    a = classe()
+    save = SAVE
     a.plot_cat_trainloss(save =         save)
     a.plot_cat_metrics(save =           save)
     a.plot_cat_testloss(save =          save)
     a.plot_cat_learning_rates(save =    save)
     a.get_df_best_fitness_points(save = save)
-    b.plot_cat_trainloss(save =         save)
-    b.plot_cat_metrics(save =           save)
-    b.plot_cat_testloss(save =          save)
-    b.plot_cat_learning_rates(save =    save)
-    b.get_df_best_fitness_points(save = save)
-    pass
+
+if __name__ == '__main__':
+
+    # Full Plots:
+    SAVE = True
+    auto_calc = True #False only for the first run
+    yuri_plot_routine(classe=Plot_Yv5_Train_Data, SAVE=SAVE)
+    yuri_plot_routine(classe=Plot_Yv3_Train_Data, SAVE=SAVE)
+    
 # %%

@@ -55,7 +55,7 @@ class Tracker():
         return mot_labels, time_sort
 
 class TrackingData():
-    def __init__(self):
+    def __init__(self, sort_max_age=1, sort_min_hits=3, sort_iou_threshold=0.3):
         # Best models
         self.byv3, self.byv5 = self._best_det_models()
 
@@ -65,6 +65,11 @@ class TrackingData():
         self.video_det_paths = [self.resdet_uavdt_fopath / x for x in os.listdir(self.resdet_uavdt_fopath) \
                                     if (x in self.byv3) or (x in self.byv5)]
 
+        # SORT Parameters
+        self.sort_max_age=sort_max_age
+        self.sort_min_hits=sort_min_hits
+        self.sort_iou_threshold=sort_iou_threshold
+
     def _best_det_models(self):
         yv3 = pbr.Plot_YV3_DET_Bench(auto_calc=True)
         byv3 = yv3.select_best_ap_overall_models(export_to_matlab=False)
@@ -73,8 +78,7 @@ class TrackingData():
         return byv3, byv5
 
     def _track_with_SORT(self, predictions):
-        #tracker = TrackingData()
-        return Tracker.SORT(predictions)
+        return Tracker.SORT(predictions,  self.sort_max_age, self.sort_min_hits, self.sort_iou_threshold)
 
     def _parse_labels(self, file_path):
         to_float = lambda x: [float(xi) for xi in x]
@@ -100,34 +104,33 @@ class TrackingData():
         '''
         deltat = 0
         frames = 0
-        output_fipath_speed = root / 'logs' / 'tracking_speed.txt'
-        mode = 'w'
-        if output_fipath_speed.exists(): mode = 'a'
-
-        with open(output_fipath_speed, 'a') as f:
-            f.write(time.strftime('\n\n## %D - %H:%M:%S\n'))
 
         # Pick best det models
         for video_fopath in self.video_det_paths:
-            print(f'[INFO] Analisando {video_fopath}... ')
-            seq_dets_file = video_fopath.glob('*.txt')
-            
+            print(f'[INFO] Analisando {video_fopath}... ')            
             if tracker_name == 'SORT':
                 tracker = self._track_with_SORT
+                params = [self.sort_max_age, self.sort_min_hits, self.sort_iou_threshold]
+                params = [str(i) for i in params]
+                sufixo = '-'.join(params)
             else:
-                raise Exception(f'Tracker {tracker_name} não encontrado.')
-            this_video_deltat = 0
+                raise Exception(f'Tracker {tracker_name} não encontrado.')            
             
+            this_video_deltat = 0
+            this_video_frames = 0
+            seq_dets_file = video_fopath.glob('*.txt')
             for det_file in seq_dets_file:
                 first_line = True
                 temp = self._parse_labels(det_file)
                 frames += len(temp)
+                this_video_frames += len(temp)
                 tr_data, time_sort = tracker(temp)
                 deltat += time_sort
                 this_video_deltat += time_sort
-                output_fopath = self.resdet_uavdt_fopath.parent / 'RES_MOT' /video_fopath.stem / tracker_name
-                output_fipath = output_fopath / f'{det_file.stem}.txt'
+                output_fopath = self.resdet_uavdt_fopath.parent / 'RES_MOT' /video_fopath.stem / f'{tracker_name}-{sufixo}'
                 output_fopath.mkdir(parents=True, exist_ok=True)
+                output_fipath = output_fopath / f'{det_file.stem}.txt'
+                output_fipath_speed = output_fopath.parent / f'speed-{tracker_name}-{sufixo}.txt'
                 with open(output_fipath, 'w') as f:
                     if len(tr_data) == 1:
                         f.write('') #video without det
@@ -143,16 +146,22 @@ class TrackingData():
                                 else:
                                     f.write('\n'+data)
             with open(output_fipath_speed, 'a') as f:
-                f.write(f'Tracker: {tracker_name}; Exp: {video_fopath.stem}; Time: {this_video_deltat} (s).\n')
+                f.write(f'Tracker: {tracker_name}; Exp: {video_fopath.stem}; Time: {this_video_deltat} (s). '+\
+                        f'Total Frames: {this_video_frames}; FPS: {this_video_frames/this_video_deltat:.6f}\n')
         
-        with open(output_fipath_speed, 'a') as f:
+        with open(self.resdet_uavdt_fopath.parent / 'RES_MOT' / f'mean-speed-{tracker_name}-{sufixo}', 'a') as f:
             f.write(f'FINAL RESULT: Tracker: {tracker_name}; Total Time: {deltat} (s). Total Frames: {frames}. Mean FPS: {frames/deltat:.6f} (fps)\n')
 
 def rotina_yuri_tracking_bench():
-    tr_data = TrackingData()
-    tr_data.track_to_bench()
+    max_age = [1, 15, 30]
+    min_hits = [3, 6, 9]
+    iou = [0.3, 0.5, 0.7]
+    sort_params = [(x,y,z) for x in max_age for y in min_hits for z in iou]
+    for (x,y,z) in sort_params:
+        tr_data = TrackingData(sort_max_age=x, sort_min_hits=y, sort_iou_threshold=z)
+        tr_data.track_to_bench()
 
 
 if __name__ == '__main__':
-    rotina_yuri_tracking_bench()
-pass
+    #rotina_yuri_tracking_bench()
+    pass

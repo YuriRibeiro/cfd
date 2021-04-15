@@ -469,7 +469,7 @@ class Plot:
         return d[name]
     
     @staticmethod
-    def make_output_file_path(metric, metric_spec='', net="Error", phase='train', ext='pdf'):
+    def make_output_file_path(metric, metric_spec='', net="Error", phase='train', ext='pdf', epochs=200):
         """
         metric: train_loss, test_loss, learning_rate, ...
         metric_spec: box loss, object. loss, ...
@@ -481,7 +481,7 @@ class Plot:
         start_time = datetime.datetime.now()
         time_stamp = start_time.strftime("%d_%B_%Y_%Hh_%Mm")
         metric = metric.replace("/", "_")
-        return output_dir / f'{net}_{metric}_cat150_{time_stamp}.{ext}'
+        return output_dir / f'{net}_{metric}_cat{epochs}_{time_stamp}.{ext}'
     
     @staticmethod
     def adjust_xticks(ax:'list', steps:'new index', vlines_pos, x:'old index'):
@@ -555,7 +555,12 @@ class BaselineModels():
         return {'det_RON' : 'chocolate',
                 'det_SSD' : 'steelblue',
                 'det_FRCNN': 'deeppink',
-                'det_RFCN' : 'dimgrey'}
+                'det_RFCN' : 'dimgrey',
+                'RON' : 'chocolate',
+                'SSD' : 'steelblue',
+                'FRCNN': 'deeppink',
+                'RFCN' : 'dimgrey',
+            }
 
 
 if __name__ == '__main__':
