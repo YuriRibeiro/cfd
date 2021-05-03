@@ -1,0 +1,1 @@
+yv3_bap_selected_models = {'YOLOv3_UAVDT_1-28_Feb_2021_04h_36m-768x768', 'YOLOv3_UAVDT_2-28_Feb_2021_04h_36m-768x768', 'YOLOv3_UAVDT_8-04_Mar_2021_18h_12m-768x768'};
