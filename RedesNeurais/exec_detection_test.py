@@ -105,9 +105,11 @@ class YOLOv5_UAVDT_DET(YOLOv5_UAVDT_CONFIG):
         if self.experimento not in self.weight_paths.keys():
             raise Exception(f"Experimento '{self.experimento}' não encontrado." +\
                              f"Experimentos disponíveis: {self.weight_paths.keys()}.")
-        self.project = "YOLOv5_UAVDT_det"
-        self.name = self.weight_paths[self.experimento].split(os.sep)[-3]
         self.use_lastpt_weights = self.opt.last_pt_weights
+        if self.use_lastpt_weights: self.project = "YOLOv5_UAVDT_det_lastpt"
+        else: self.project = "YOLOv5_UAVDT_det"
+        self.name = self.weight_paths[self.experimento].split(os.sep)[-3]
+        
         self.run_inference()
 
     def run_inference(self):
@@ -125,7 +127,8 @@ class YOLOv5_UAVDT_DET(YOLOv5_UAVDT_CONFIG):
 
         # Now, run the inference
         weights_file_path = self.weight_paths[self.experimento]
-        if self.use_lastpt_weights: weights_file_path = weights_file_path.parent / 'last.pt'
+        if self.use_lastpt_weights: weights_file_path = weights_file_path.replace('last', 'best')
+        print("weights file path", weights_file_path)
         test_py_path = os.path.join(yv5_path, "test.py")
         data_yaml_path = os.path.join(self.this_file_dir, self.experimento, "data_detection.yaml")
         with open(data_yaml_path, 'w') as arq:
@@ -157,6 +160,7 @@ class YOLOv5_UAVDT_DET(YOLOv5_UAVDT_CONFIG):
         """
         
         for k,v in opt.__dict__.items():
+            if k == 'last_pt_weights': continue
             if isinstance(v, bool) and v==True:
                 mytable = k.maketrans("_", "-")
                 shell_command.append(f"--{k.translate(mytable)}")
@@ -314,9 +318,10 @@ class YOLOv3_UAVDT_DET(YOLOv3_UAVDT_CONFIG):
         if self.experimento not in self.weight_paths.keys():
             raise Exception(f"Experimento '{self.experimento}' não encontrado." +\
                              f"Experimentos disponíveis: {self.weight_paths.keys()}.")
-        self.project = "YOLOv3_UAVDT_det"
-        self.name = self.weight_paths[self.experimento].split(os.sep)[-3]
         self.use_lastpt_weights = self.opt.last_pt_weights
+        if self.use_lastpt_weights: self.project = "YOLOv5_UAVDT_det_lastpt"
+        else: self.project = "YOLOv5_UAVDT_det"
+        self.name = self.weight_paths[self.experimento].split(os.sep)[-3]
         self.run_inference()
 
     def run_inference(self):
@@ -334,7 +339,7 @@ class YOLOv3_UAVDT_DET(YOLOv3_UAVDT_CONFIG):
 
         # Now, run the inference
         weights_file_path = self.weight_paths[self.experimento]
-        if self.use_lastpt_weights: weights_file_path = weights_file_path.parent / 'last.pt'
+        if self.use_lastpt_weights: weights_file_path = weights_file_path.replace('last', 'best')
         test_py_path = os.path.join(yv3_path, "test.py")
         data_yaml_path = os.path.join(self.this_file_dir, self.experimento, "data_detection.yaml")
         with open(data_yaml_path, 'w') as arq:
@@ -366,6 +371,7 @@ class YOLOv3_UAVDT_DET(YOLOv3_UAVDT_CONFIG):
         """
         
         for k,v in opt.__dict__.items():
+            if k == 'last_pt_weights': continue
             if isinstance(v, bool) and v==True:
                 mytable = k.maketrans("_", "-")
                 shell_command.append(f"--{k.translate(mytable)}")
