@@ -10,8 +10,9 @@
 **/*.pyc
 
 ## Ignorar a pasta Datasets exceto Readme.md
-/Datasets/*
+/Datasets/*/**
 !/Datasets/README.md
+!/Datasets/UAVDT_benchmark_mods/**
 
 # Pasta temporária local
 /temp/
