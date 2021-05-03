@@ -14,6 +14,10 @@ import numpy as np
 import os
 import random
 import shutil
+from IPython.display import HTML, display, Javascript
+import ipywidgets as widgets
+import matplotlib.pyplot as plt
+import json
 
 sys.path.append(str(configs.root / 'sort'))
 sys.path.append(str(configs.root / 'yv5'))
@@ -251,13 +255,16 @@ class CountBarrier():
         self.name = name
         
         self.counter = 0
-        self.intersection_frames = set([])
+        self.intersection_frames = {}
     
     def add_counter(self, value = 1):
         self.counter += value
     
-    def add_intersection_frame(self, frame_number):
-        self.intersection_frames.add(frame_number)
+    def add_intersection_frame(self, frame_number, value=1):
+        if frame_number in self.intersection_frames:
+            self.intersection_frames[frame_number] += value
+        else:
+            self.intersection_frames[frame_number] = value
     
     def onSegment(self, p, q, r): 
         """
@@ -350,7 +357,13 @@ class Analysis():
                 clear_output_folder=True
                 ):
         if pathlib.Path(input_path) == pathlib.Path(output_path):
-            raise Exception('Input path should be differente of the output path.')
+            raise Exception('Input path should be different of the output path.')
+        
+        rp1 = os.path.realpath(input_path).split(os.sep)
+        rp2 = os.path.realpath(output_path).split(os.sep)
+        check = [i1 == i2 for i1,i2 in zip(rp1,rp2)]
+        if all(check):
+            raise Exception('Output path should not be subpath of the input path.')
 
         # Inputsave_track_img_barriers_wl = True,
         input_videos = GatherData(video_path=input_path)
@@ -359,7 +372,7 @@ class Analysis():
 
         # Output
         output_fopath = pathlib.Path(output_path)
-        if not output_fopath.exists():
+        if not output_fopath.exists() or (output_fopath.exists() and len(list(output_fopath.glob('*'))) == 0):
             pass
         elif output_fopath.is_dir() and len(list(output_fopath.glob('*'))) != 0:
             if clear_output_folder:
@@ -387,6 +400,15 @@ class Analysis():
         self.barriers = barriers
         if not self.barriers == None and not isinstance(self.barriers, dict):
             raise Exception("Barriers should be a dict {'movie_name':[barriers], 'movie_name2':[barriers_2]} style.")
+        # Check if count barriers have unique names
+        if isinstance(self.barriers, dict):
+            for vid in self.barriers:
+                bnames = []
+                for b in self.barriers[vid]:
+                    if not b.name in bnames: bnames.append(b.name)
+                    else:
+                        raise Exception(f'Counting barriers NAMES of the video {vid} are not unique.')
+
 
         # Save Parameters
         self.save_detection_json            = save_detection_json
@@ -505,6 +527,37 @@ class Analysis():
                     cv2.putText(img, label, (x, y-2), 0, tl / 3, (0,0,0), thickness=tf, lineType=cv2.LINE_AA)
         return img
 
+    def _plot_barriers_crossings_vs_frame(self, blist:'List'=None):
+        if blist == None: return
+        if not isinstance(blist, list): raise Exception(f'Wrong input type. Expected a list, and got {type(blist)}')
+        # Plot
+        plots = {}
+        total_crossings = {}
+        for bi in blist:
+            start_frame = bi.start_frame
+            end_frame = bi.end_frame
+            instersection_frames = list(bi.intersection_frames.keys())
+            intersections_count = bi.intersection_frames #dict
+            
+            frames = np.arange(start_frame, end_frame + 1)
+            crossing = np.zeros((len(frames),))
+            for i in instersection_frames:
+                crossing[i-1] = intersections_count[i]
+
+            with plt.style.context('bmh'):
+                fig, ax = plt.subplots(1,1, figsize=(10,6), constrained_layout=True)
+                for spine in ax.spines.values():
+                    spine.set_visible(False)
+                ax.plot(frames, crossing)
+                ax.set_xlabel('Frame Number', fontsize=14)
+                ax.set_ylabel('Crossings', fontsize=14)
+                ax.set_title(f'Barrier {bi.name} -- Crossings vs Frame', fontsize=16)
+                ax.set_xticks(frames)
+            total_crossings[bi.name] = np.sum(crossing)
+            plots[bi.name] = fig
+        
+        return plots, total_crossings
+
 
     def start(self):
 
@@ -516,6 +569,7 @@ class Analysis():
 
             output_fipath_dets_json = self.output_root_fopath / f'dets_{video_name}.json'
             first_line_detection_json = True
+            output_det_json_file = open(str(output_fipath_dets_json),'w')
 
             output_fipath_tracking_json = self.output_root_fopath / f'tracking_{video_name}.json'
 
@@ -534,6 +588,9 @@ class Analysis():
 
             output_fopath_track_img_barriers = self.output_root_fopath / f'track_{video_name}_imgs_barriers'
             if self.save_track_img_barriers: output_fopath_track_img_barriers.mkdir(parents=True, exist_ok=True)
+
+            output_fopath_barriers_plots = self.output_root_fopath / f'barriers_{video_name}_crossings_plots'
+            if (self.barriers_activated) and (video_name in self.barriers): output_fopath_barriers_plots.mkdir(parents=True, exist_ok=True)
 
             output_fipath_det_vid = self.output_root_fopath / f'dets_{video_name}.mp4'
             output_fipath_det_vid_with_headers = self.output_root_fopath / f'dets_{video_name}_wh.mp4'
@@ -555,29 +612,31 @@ class Analysis():
                 if data == None: continue
                 frame, img, dets = data #dets: (x,y,w,h,classe,conf)
                 if self.save_detection_json:
+                    det_str = str(dets)
+                    det_table = det_str.maketrans({" ":"", "(":"[", ")":"]"})
                     if not first_line_detection_json:
-                        string = f',{{"frame":{frame},"dets":{str(dets).replace(" ","")}}}'
+                        string = f',{{"frame":{frame},"dets":{det_str.translate(det_table)}}}'
                     else:
-                        string = f'[{{"frame":{frame},"dets":{str(dets).replace(" ","")}}}'
+                        string = f'[{{"frame":{frame},"dets":{det_str.translate(det_table)}}}'
                         first_line_detection_json = False
-                    with open(str(output_fipath_dets_json), 'a') as f:
-                        f.write(string)
+                    
+                    output_det_json_file.write(string)
                 
                 if first_vid_iter: # Open Vid Recorders
+                    first_vid_iter = False
+                    fourcc = 'mp4v'  # output video codec
                     if self.save_videos and input_vid_type=='video':
                         cap = cv2.VideoCapture(str(input_vid))
                         if not cap.isOpened(): raise Exception(f"Error opening video {str(input_vid)}.")
                         fps = cap.get(cv2.CAP_PROP_FPS)
-                        fourcc = 'mp4v'  # output video codec
                         w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                         h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                         cap.release()
                     
                     elif self.save_videos and input_vid_type=='image':
                         fps=30
-                        fourcc = 'mp4v'  # output video codec
-                        h = img.shape[0]
-                        w = img.shape[1]
+                        h = int(img.shape[0])
+                        w = int(img.shape[1])
 
                     # Create VidWriter
                     if self.save_det_vid_without_headers:
@@ -671,17 +730,40 @@ class Analysis():
             if self.save_tracking_json:
                 new_line='\n'
                 first_line_tracking = True
-                for frame,dets in self.tracker.mot_labels.items(): #x,y,w,h,idx
-                    if len(dets) == 0:
-                        dets = "xxxx([]"
-                    if not first_line_tracking:
-                        string = f',{{"frame":{frame},"mot":{repr(dets).replace(new_line,"").replace(" ", "")[6:-1]}}}'
-                    else:
-                        string = f'{{"frame":{frame},"mot":{repr(dets).replace(new_line,"").replace(" ", "")[6:-1]}}}'
-                        first_line_tracking = False
-                    with open(str(output_fipath_tracking_json), 'a') as f:
-                        f.write(string)
+                with open(str(output_fipath_tracking_json), 'a') as f:
+                    for frame, dets in self.tracker.mot_labels.items(): #x,y,w,h,idx
+                        det_str = repr(dets)
+                        det_table = det_str.maketrans({" ":"", "(":"[", ")":"]", new_line:""})
+                        if len(dets) == 0:
+                            det_str = "xxxxx([])"
+                        if not first_line_tracking:
+                            string = f',{{"frame":{frame},"mot":{det_str.translate(det_table)[6:-1]}}}'
+                        else:
+                            string = f'[{{"frame":{frame},"mot":{det_str.translate(det_table)[6:-1]}}}'
+                            first_line_tracking = False    
+                        f.write(f'{string}')
+                    f.write(']')
+
+            # Save Barriers Plots
+            if this_video_barriers_activated:
+                barrier_plots, total_crossings = self._plot_barriers_crossings_vs_frame(barriers)
+                text = ''
+                str_start = '['
+                for barrier in barriers:
+                    bname = barrier.name
+                    # Save plots
+                    barrier_plots[bname].savefig(str(output_fopath_barriers_plots / f'{video_name}_{bname}.png'), bbox_inches='tight')
+                    # Save Infos
+                    text += f'{str_start}{{"barrier_name":"{bname}","total_crossings":{total_crossings[bname]},"frame_vs_cross_dict":{json.dumps(barrier.intersection_frames)}}}'
+                    str_start=','
+
+                with open(str(output_fopath_barriers_plots / f'{video_name}_barrier_infos.json'), 'w') as f:
+                    f.write(text+']')
             
+            # Release det_json file writer
+            output_det_json_file.write(']')
+            output_det_json_file.close()
+
             # Release VideoWriters
             if self.save_det_vid_without_headers:
                 vid_writer_det_without_headers.release()
@@ -695,7 +777,186 @@ class Analysis():
                 vid_writer_track_lines.release()
             if self.save_track_vid_barriers:
                 vid_writer_track_barriers.release()
-                    
+
+class JupyterInterface():
+    def __init__(self):
+        self._widgets()
+        self._set_callbacks()
+
+    def _widgets(self):
+
+        self.file_selector = HTML('<input type="file" id="selectedFile" style="display: none; " /> \
+                    <input type="button" value="Search Input/ Output Path ..." \
+                    onclick="document.getElementById(\'selectedFile\').click();" />')
+
+        self.input_path_widget = widgets.Text(
+                                              value='',
+                                              placeholder='Input Path...',
+                                              description='Input Path:',
+                                              disabled=False,
+                                              layout=widgets.Layout(width='100%')
+                                              )
+
+        self.output_fopath_widget = widgets.Text(
+                                              value='',
+                                              placeholder='Output Folder Path...',
+                                              description='Output Path:',
+                                              disabled=False,
+                                              layout=widgets.Layout(width='100%')
+                                                )
+
+        det0 = configs.detectors_list[0]
+        tracker0 = configs.trackers_list[0]
+        det_params = configs.detector_default_params[det0]
+
+        tracker_params = configs.tracker_default_params[tracker0][det0]
+        
+        self.det_selector = widgets.Dropdown(
+                                            options=configs.detectors_list,
+                                            value=det0,
+                                            description='Detector:',
+                                            disabled=False,
+                                        )
+        self.tracker_selector = widgets.Dropdown(
+                                    options=configs.trackers_list,
+                                    value=tracker0,
+                                    description='Tracker:',
+                                    disabled=False,
+                                )
+        
+        self.device_selector = widgets.Dropdown(
+                                    options=list(configs.default_devices_list.keys()),
+                                    value='cpu',
+                                    description='Device',
+                                    disabled=False,
+                                )
+        self.parameters_box = widgets.Textarea(
+                                                value='',
+                                                placeholder='Generated python code.',
+                                                description='Python Code:',
+                                                disabled=False,
+                                                layout=widgets.Layout(width='90%', height='240px')
+                                            )
+        
+        
+        self.msg0 = '<br> <p style="font-size:15px"> Como salvar os resultados?: </p><br>'
+        self.checkbox_msgs = ['detection_json',
+                         'tracking_json',
+                         'det_imgs_without_headers',
+                         'det_imgs_with_headers', 
+                         'track_imgs_without_headers',
+                         'track_imgs_with_headers',
+                         'track_imgs_lines',
+                         'track_img_barriers',
+                         'det_vid_without_headers',
+                         'det_vid_with_headers',
+                         'track_vid_without_headers',
+                         'track_vid_with_headers',
+                         'track_vid_lines',
+                         'track_vid_barriers']
+        make = lambda x: widgets.Checkbox(value=True,description=x,disabled=False,indent=True)        
+        self.checkbox_widgets = [make(i) for i in self.checkbox_msgs]
+        hbox1 = widgets.HBox(self.checkbox_widgets[:3])
+        hbox2 = widgets.HBox(self.checkbox_widgets[3:6])
+        hbox3 = widgets.HBox(self.checkbox_widgets[6:9])
+        hbox4 = widgets.HBox(self.checkbox_widgets[9:12])
+        hbox5 = widgets.HBox(self.checkbox_widgets[12:15])
+        self.checkbox_vbox = widgets.VBox([hbox1, hbox2, hbox3, hbox4, hbox5])
+        self._callback_det_or_tracker_dropdown_onchange(None)
+
+
+    def _set_callbacks(self):
+        self.det_selector.on_trait_change(self._callback_det_or_tracker_dropdown_onchange)
+        self.tracker_selector.on_trait_change(self._callback_det_or_tracker_dropdown_onchange)
+        self.device_selector.on_trait_change(self._callback_det_or_tracker_dropdown_onchange)
+        self.input_path_widget.on_trait_change(self._callback_det_or_tracker_dropdown_onchange)
+        self.output_fopath_widget.on_trait_change(self._callback_det_or_tracker_dropdown_onchange)
+        for i in self.checkbox_widgets:
+            i.on_trait_change(self._callback_det_or_tracker_dropdown_onchange)
+
+
+    def _callback_det_or_tracker_dropdown_onchange(self, val):
+        det = self.det_selector.value
+        trk = self.tracker_selector.value
+
+        if self.input_path_widget.value == '':
+            input_path = ''
+        else:
+            input_ = pathlib.Path(self.input_path_widget.value)
+            input_path = f'input_path = \'{str(input_)}\''
+
+        if self.output_fopath_widget.value == '':
+            output_fopath = ''
+        else:
+            output = pathlib.Path(self.output_fopath_widget.value) / f'{input_.stem}_processed_{det}-{trk}'
+            output_fopath = f'output_path = \'{str(output)}\''
+
+        device = self.device_selector.value
+        det_params = configs.detector_default_params[det]
+        det_params.update({'device' : configs.default_devices_list[device]})
+        trk_params = configs.tracker_default_params[trk][det]
+
+        temp = ''
+        for k,v in trk_params.items():
+            this = f"'{k}' : {v},\n"
+            temp += f'{this:>40}'
+        trk_params = temp[:-2]
+
+        temp = ''
+        for k,v in det_params.items():
+            if isinstance(v, str):
+                this = f"'{k}' : '{v}',\n"    
+            else:
+                this = f"'{k}' : {v},\n"
+            temp += f'{this:>40}'            
+        det_params = temp[:-2]
+        
+        temp = ''
+        for w, item in zip(self.checkbox_widgets, self.checkbox_msgs):
+            this = f"'save_{item}' : {str(w.value)},\n"
+            temp += f'{this:>50}'
+        save = temp[:-2]
+        
+        msg = f'''import traffic_vehicle_counter as tvc
+CountBarrier = tvc.CountBarrier
+
+input_path = {input_path}
+
+output_path = {output_fopath}
+
+save = {{
+{save}
+}}
+
+detector_params = {{
+{det_params}
+}}
+
+tracker_params = {{
+{trk_params}
+}}
+
+## DEFINA AS BARREIRAS AQUI!
+#barriers = 
+
+detector = tvc.Detector(detector='{det}', params=detector_params)
+
+tracker = tvc.TrackerSort(**tracker_params)
+
+a = tvc.Analysis(
+            input_path   = input_path,
+            output_path  = output_path,
+            detector     = detector,
+            tracker      = tracker,
+            barriers     = barriers,
+            **save
+)
+
+## REMOVA O '#' PARA PERMITIR QUE O PROGRAMA RODE!
+#a.start()'''
+
+        self.parameters_box.value = msg
+
 if __name__ == '__main__':
     def example1(device='cpu', det='yv5_S'):
         save_outputs = {'save_detection_json'             : True, 
@@ -770,7 +1031,7 @@ if __name__ == '__main__':
                    **save_outputs)
         a.start()
 
-    def example3(device='cpu', det='yv5_S'):
+    def example3(device='cpu', det='yv5_X'):
         save_outputs = {'save_detection_json'             : True, 
                         'save_tracking_json'              : True, 
                         'save_det_imgs_without_headers'   : True, 
@@ -787,17 +1048,19 @@ if __name__ == '__main__':
                         'save_track_vid_barriers'         : True 
                         }
 
-        input_path  = '/home/yuri/Desktop/videos_cier/'
-        output_path = f'/home/yuri/Desktop/video_cier_processed_{det}/'
+        input_path  = '/home/yuri/Desktop/Videos/videos_cier'
+        output_path = f'/home/yuri/Desktop/Videos_Processed/videos_cier_processed_{det}/'
         detector    = Detector(detector=det, params={'device':device})
         tracker     = TrackerSort(**detector.get_sort_tracker_optimal_parameters())
 
-        #b0=CountBarrier(p1=(224, 465), q1=(587, 478), start_frame=1, end_frame=812, name="b0")
-        #b1=CountBarrier(p1=(668, 416), q1=(958, 430), start_frame=1, end_frame=812, name="b1")
-        
         dj_b0=CountBarrier(p1=(309, 168), q1=(357, 717), start_frame=1, end_frame=1199, name="b0")
         dj_b1=CountBarrier(p1=(1305, 115), q1=(1495, 710), start_frame=1, end_frame=1199, name="b1")
-        barriers = {"dronejose": [dj_b0, dj_b1]}
+        
+        v_cel1=CountBarrier(p1=(288, 813), q1=(1310, 672), start_frame=52, end_frame=6588, name="b0")
+        v_cel2=CountBarrier(p1=(979, 482), q1=(1528, 412), start_frame=52, end_frame=6588, name="b1")
+
+        barriers = {"dronejose": [dj_b0, dj_b1],
+                    "video_cel1": [v_cel1, v_cel2]}
         # P.S: barriers coords obtained via convenience_define_barriers.py
 
         a=Analysis(input_path   =input_path,
@@ -808,7 +1071,8 @@ if __name__ == '__main__':
                    **save_outputs)
         a.start()
 
-    #example1(det='yv3_tiny')
+    example1(det='yv3_tiny')
     #example2(det='yv3_tiny')
-    example3()
+    #example3()
+    pass
 # %%

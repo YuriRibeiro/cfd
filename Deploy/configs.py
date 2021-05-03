@@ -7,8 +7,11 @@ root = pathlib.Path(__file__).parent
 compatible_video_types = ['.avi', '.mp4']
 compatible_image_types = ['.png', '.jpg', '.jpeg']
 
+#Default devices list
+default_devices_list = {'cpu': 'cpu', 'GPU0':'0', 'GPU1':'1', 'GPU2':'2', 'GPU3':'3'}
+
 # Compatible detectors
-detectors_list = ['yv5', 'yv5_S', 'yv5_M', 'yv5_L', 'yv5_X', 'yv3_tiny', 'yv3', 'yv3_spp']
+detectors_list = ['yv5_S', 'yv5_M', 'yv5_L', 'yv5_X', 'yv3_tiny', 'yv3', 'yv3_spp']
 
 # Compatible Trackers
 trackers_list = ['SORT']
@@ -51,6 +54,8 @@ tracker_sort_default_params = { 'yv5_S':    {'max_age': 15, 'min_hits': 9, 'iou_
                                 'yv3_tiny': {'max_age': 30, 'min_hits': 3, 'iou_threshold': 0.3} ,
                                 'yv3':      {'max_age': 30, 'min_hits': 3, 'iou_threshold': 0.3} ,
                                 'yv3_spp':  {'max_age': 15, 'min_hits': 3, 'iou_threshold': 0.5} }
+
+tracker_default_params = { 'SORT' : tracker_sort_default_params }
 
 # UAVDT class bbox colors BGR. 0: car, 1: Bus, 2: Truck
 uavdt_class_colors_rgb = {0 : (255,0,0) ,
